@@ -18,7 +18,7 @@ final class ArbitaryPage: AppPage {
 
     private func setupUI() {
         root.children.clear()
-        root.padding = Thickness(left: 40, top: 32, right: 40, bottom: 32)
+        root.padding = Thickness(left: 40, top: 0, right: 40, bottom: 32)
         
         // 主容器
         let mainContainer = StackPanel()
@@ -26,34 +26,15 @@ final class ArbitaryPage: AppPage {
         mainContainer.horizontalAlignment = .stretch
         mainContainer.verticalAlignment = .top
         
-        // 欢迎标题
-        let titleBlock = TextBlock()
-        titleBlock.text = "Arbitrary Page"
-        titleBlock.fontSize = 32
-        titleBlock.fontWeight = FontWeights.semiBold
-        mainContainer.children.append(titleBlock)
-        
-        // 副标题
-        let subtitleBlock = TextBlock()
-        subtitleBlock.text = "A demonstration page with various UI components"
-        subtitleBlock.fontSize = 14
-        subtitleBlock.foreground = SolidColorBrush(App.context.theme.isDark ? 
-            UWP.Color(a: 255, r: 180, g: 180, b: 180) : 
-            UWP.Color(a: 255, r: 100, g: 100, b: 100))
-        subtitleBlock.margin = Thickness(left: 0, top: -16, right: 0, bottom: 0)
-        mainContainer.children.append(subtitleBlock)
-        
-        // 分隔线
-        let separator = createSeparator()
-        mainContainer.children.append(separator)
-        
         // 信息卡片区域
         let infoSection = createInfoSection()
         mainContainer.children.append(infoSection)
+        mainContainer.children.append(createSeparator())
         
         // 操作按钮区域
         let actionSection = createActionSection()
         mainContainer.children.append(actionSection)
+        mainContainer.children.append(createSeparator())
         
         // 统计卡片
         let statsSection = createStatsSection()

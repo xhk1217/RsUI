@@ -149,13 +149,7 @@ class MainWindow: Window, @unchecked Sendable {
         root.children.append(titleBar)
         try? Grid.setRow(titleBar, 0)
         try? setTitleBar(titleBar)
-
-        let context = WindowContext()
-        for module in App.context.modules {
-            for item in module.registerNavigationViewItems(in: context) {
-                navigationView.menuItems.append(item)
-            }
-        }
+        
         navigationView.selectionChanged.addHandler { [weak self] view, args in
             guard let self, let view, let args else { return }
 
@@ -200,6 +194,14 @@ class MainWindow: Window, @unchecked Sendable {
         self.title = tr(App.context.productName)
         titleBar.title = self.title
         searchBox?.placeholderText = tr("searchControlsAndSamples")
+
+        let context = WindowContext()
+        navigationView.menuItems.clear()
+        for module in App.context.modules {
+            for item in module.registerNavigationViewItems(in: context) {
+                navigationView.menuItems.append(item)
+            }
+        }
     }
     
     private func restoreWindowRect() {
