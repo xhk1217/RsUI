@@ -1,7 +1,7 @@
 import UWP
 import WinUI
 
-public func buildSettingsRow(iconGlyph: String, title: String, description: String, control: WinUI.UIElement) -> WinUI.Grid {
+public func buildSettingsRow(iconGlyph: String, title: String, description: String, control: WinUI.UIElement?) -> WinUI.Grid {
     let isDark = App.context.theme.isDark
     let secondaryForeground = WinUI.SolidColorBrush(isDark
             ? UWP.Color(a: 255, r: 169, g: 173, b: 189)
@@ -68,15 +68,17 @@ public func buildSettingsRow(iconGlyph: String, title: String, description: Stri
     try? WinUI.Grid.setRow(descriptionLabel, 1)
     try? WinUI.Grid.setColumn(descriptionLabel, 1)
 
-    let controlHost = WinUI.StackPanel()
-    controlHost.orientation = .horizontal
-    controlHost.verticalAlignment = .center
-    controlHost.spacing = 8
-    controlHost.children.append(control)
-    container.children.append(controlHost)
-    try? WinUI.Grid.setRow(controlHost, 0)
-    try? WinUI.Grid.setColumn(controlHost, 2)
-    try? WinUI.Grid.setRowSpan(controlHost, 2)
+    if let control {
+        let controlHost = WinUI.StackPanel()
+        controlHost.orientation = .horizontal
+        controlHost.verticalAlignment = .center
+        controlHost.spacing = 8
+        controlHost.children.append(control)
+        container.children.append(controlHost)
+        try? WinUI.Grid.setRow(controlHost, 0)
+        try? WinUI.Grid.setColumn(controlHost, 2)
+        try? WinUI.Grid.setRowSpan(controlHost, 2)
+    }
 
     return container
 }
