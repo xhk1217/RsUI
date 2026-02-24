@@ -9,3 +9,7 @@ public protocol AppPage: AnyObject {
 
     func onAppearanceChanged()
 }
+
+public extension AppPage {
+    func onAppearanceChanged() {}
+}
