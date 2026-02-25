@@ -11,19 +11,19 @@ public protocol Module {
 
     func registerNavigationViewItems(in context: WindowContext) -> [NavigationViewItem]
 
-    func makeNavigationTarget(for selectedItemTag: Any) -> (header: UIElement?, page: AppPage)?
+    func makeNavigationTarget(for selectedItemTag: Any, in context: WindowContext) -> (header: UIElement?, page: AppPage)?
     func makeSettingsCard() -> UIElement?
 }
 
 public extension Module {
-    func register(in context: WindowContext) {        
+    func register(in context: WindowContext) {
     }
 
     func registerNavigationViewItems(in context: WindowContext) -> [NavigationViewItem] {
         return []
     }
 
-    func makeNavigationTarget(for selectedItemTag: Any) -> (header: UIElement?, page: AppPage)? {
+    func makeNavigationTarget(for selectedItemTag: Any, in context: WindowContext) -> (header: UIElement?, page: AppPage)? {
         return nil
     }
 

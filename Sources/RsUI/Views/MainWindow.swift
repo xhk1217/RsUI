@@ -155,8 +155,9 @@ class MainWindow: Window {
                 let page = SettingsPage()
                 self.navigationContentFrame.content = page.rootView
             } else if let item = args.selectedItem as? NavigationViewItem, let tag = item.tag {
+                let context = WindowContext(hwnd: self.appWindow)
                 for module in App.context.modules {
-                    if let target = module.makeNavigationTarget(for: tag) {
+                    if let target = module.makeNavigationTarget(for: tag, in: context) {
                         view.header = target.header
                         self.navigationContentFrame.content = target.page.rootView
                         break
