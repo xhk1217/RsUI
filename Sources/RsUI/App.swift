@@ -8,24 +8,25 @@ open class App: SwiftApplication {
     let group: String
     let product: String
     let bundle: Bundle
-    let modules: [any Module]
+    let moduleTypes: [Module.Type]
 
     public required convenience init() {
         self.init("SwiftWorks", "RsUI", .main, [])
     }
 
-    public init(_ group: String, _ product: String, _ bundle: Bundle, _ modules: [any Module]) {
+    public init(_ group: String, _ product: String, _ bundle: Bundle, _ moduleTypes: [Module.Type]) {
         self.group = group
         self.product = product
         self.bundle = bundle
-        self.modules = modules
+        self.moduleTypes = moduleTypes
 
         super.init()
     }
     
     override open func onLaunched(_ args: WinUI.LaunchActivatedEventArgs) {
         // Need to init context after super.init() because some WinUI APIs require the application to be initialized
-        App.context = AppContext(group, product, bundle, modules)
+        App.context = AppContext(group, product, bundle)
+        App.context.modules = moduleTypes.map { $0.init() }
 
         let mainWindow = MainWindow()
         try! mainWindow.activate()
@@ -33,5 +34,5 @@ open class App: SwiftApplication {
 
     override open func onShutdown() {
         App.context = nil
-     }
+    }
 }

@@ -23,9 +23,9 @@ public class AppContext {
     }
 
     let bundle: Bundle
-    let modules: [any Module]
+    var modules: [any Module] = []
 
-    init(_ group: String, _ product: String, _ bundle: Bundle, _ modules: [any Module]) {
+    init(_ group: String, _ product: String, _ bundle: Bundle) {
         productName = product
         supportDirectory = URL.applicationSupportDirectory.reachingChild(named: "\(group)/\(product)/")!       
         preferences = JsonPreferences.makeAppStandard(group: group, product: product)
@@ -33,7 +33,6 @@ public class AppContext {
         language = preferences.load(for: AppLanguage.self)
     
         self.bundle = bundle
-        self.modules = modules
 
         if Application.current.requestedTheme != theme.applicationTheme {
             Application.current.requestedTheme = theme.applicationTheme

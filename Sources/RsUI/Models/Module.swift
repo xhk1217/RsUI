@@ -1,9 +1,10 @@
 ﻿import Foundation
 import WinUI
 import WinSDK
+import RsHelper
 
 /// 模块协议，定义了模块的标准接口
-public protocol Module {
+public protocol Module : ExpressibleByEmptyLiteral {
     /// 模块的唯一标识符
     var id: String { get }
 
