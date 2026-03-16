@@ -6,7 +6,7 @@ import WinSDK
 public struct WindowContext {
     let hwnd: AppWindow
 
-    func pickFolder(_ handler: @escaping (String) -> Void) {
+    public func pickFolder(_ handler: @escaping (String) -> Void) {
         Task {
             let picker = FolderPicker(hwnd.id)
             guard let asyncResult = try? picker.pickSingleFolderAsync() else { return }
