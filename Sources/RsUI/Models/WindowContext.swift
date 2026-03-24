@@ -4,11 +4,11 @@ import WinSDK
 
 /// 模块所附窗口上下文信息
 public struct WindowContext {
-    let hwnd: AppWindow
+    let owner: MainWindow
 
     public func pickFolder(_ handler: @escaping (String) -> Void) {
-        Task {
-            let picker = FolderPicker(hwnd.id)
+        Task { @MainActor in
+            let picker = FolderPicker(owner.appWindow.id)
             guard let asyncResult = try? picker.pickSingleFolderAsync() else { return }
             guard let result = try? await asyncResult.get() else { return }
 
@@ -16,5 +16,9 @@ public struct WindowContext {
                 handler(result.path)
             }
         }
+    }
+
+    public func navigate(to view: View) {
+        owner.navigate(to: view)
     }
 }

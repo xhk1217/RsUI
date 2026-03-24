@@ -107,6 +107,9 @@ class MainWindow: Window {
 
         startObserving()
     }
+
+    func navigate(to view: View) {
+    } 
  
     /// 配置窗口基本属性
     private func setupWindow() {
@@ -157,7 +160,7 @@ class MainWindow: Window {
                 self.navigationContentFrame.content = page.content
                 self.displayingPage = page
             } else if let item = args.selectedItem as? NavigationViewItem, let tag = item.tag {
-                let context = WindowContext(hwnd: self.appWindow)
+                let context = WindowContext(owner: self)
                 for module in App.context.modules {
                     if let target = module.makeNavigationTarget(for: tag, in: context) {
                         view.header = target.header
@@ -175,7 +178,7 @@ class MainWindow: Window {
     }
 
     private func setupModules() {
-        let context = WindowContext(hwnd: self.appWindow)
+        let context = WindowContext(owner: self)
         for module in App.context.modules {
             module.register(in: context)
         }
@@ -202,7 +205,7 @@ class MainWindow: Window {
         titleBar.title = self.title
         searchBox?.placeholderText = tr("searchControlsAndSamples")
 
-        let context = WindowContext(hwnd: self.appWindow)
+        let context = WindowContext(owner: self)
         navigationView.menuItems.clear()
         for module in App.context.modules {
             for item in module.registerNavigationViewItems(in: context) {

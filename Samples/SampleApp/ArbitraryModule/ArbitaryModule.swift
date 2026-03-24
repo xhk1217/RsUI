@@ -26,10 +26,12 @@ final class ArbitaryModule: Module {
             iconGlyph: "\u{E7C3}",
             label: tr("Arbitrary"),
             url: "rs://\(id)",
-            actionGlyph: "\u{E72C}",
+            actionGlyph: "\u{E8F4}",
             actionTooltip: tr("actionTooltip"),
             actionHandler: { _, _ in
-                print("Refresh button clicked")
+                context.pickFolder {
+                    print($0)
+                }
             }
         )
         let sep = NavigationViewItemSeparator()

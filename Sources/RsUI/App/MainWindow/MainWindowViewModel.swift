@@ -1,5 +1,9 @@
 import Foundation
+import Observation
 
-/// 主窗口 ViewModel，管理应用的全局状态和配置
+@Observable
 class MainWindowViewModel {
+    var backwardViews: [View] = []
+    var forwardViews: [View] = []
+    var currentView: View? = nil
 }
