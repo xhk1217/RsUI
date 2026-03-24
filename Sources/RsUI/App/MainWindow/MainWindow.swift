@@ -95,7 +95,6 @@ class MainWindow: Window {
 
         return nav
     } ()
-    private var displayingPage: View? = nil
 
     // MARK: - 初始化
     override init() {
@@ -109,7 +108,11 @@ class MainWindow: Window {
     }
 
     func navigate(to view: View) {
-    } 
+        viewModel.currentView = view
+        
+        navigationView.header = view.header
+        navigationContentFrame.content = view.content
+    }
  
     /// 配置窗口基本属性
     private func setupWindow() {
@@ -151,21 +154,16 @@ class MainWindow: Window {
         try? Grid.setRow(titleBar, 0)
         try? setTitleBar(titleBar)
         
-        navigationView.selectionChanged.addHandler { [weak self] view, args in
-            guard let self, let view, let args else { return }
+        navigationView.selectionChanged.addHandler { [weak self] _, args in
+            guard let self, let args else { return }
 
             if args.isSettingsSelected {
-                let page = SettingsView()
-                view.header = page.header
-                self.navigationContentFrame.content = page.content
-                self.displayingPage = page
-            } else if let item = args.selectedItem as? NavigationViewItem, let tag = item.tag {
+                navigate(to: SettingsView())
+            } else if let item = args.selectedItem as? NavigationViewItem, let uri = item.tag as? Uri {
                 let context = WindowContext(owner: self)
                 for module in App.context.modules {
-                    if let target = module.makeNavigationTarget(for: tag, in: context) {
-                        view.header = target.header
-                        self.navigationContentFrame.content = target.content
-                        self.displayingPage = target
+                    if let view = module.navigationRequested(for: uri, in: context) {
+                        navigate(to: view)
                         break
                     }
                 }
@@ -221,8 +219,8 @@ class MainWindow: Window {
             }
         }
         
-        self.navigationView.header = displayingPage?.header
-        self.navigationContentFrame.content = displayingPage?.content
+        self.navigationView.header = viewModel.currentView?.header
+        self.navigationContentFrame.content = viewModel.currentView?.content
     }
     
     private func restoreWindowRect() {

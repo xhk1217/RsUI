@@ -38,8 +38,8 @@ final class ArbitaryModule: Module {
         return [header, navigationViewItem, sep]
     }
 
-    func makeNavigationTarget(for selectedItemTag: Any, in context: WindowContext) -> View? {
-        guard let tag = selectedItemTag as? Uri, tag.host == self.id else { return nil }
+    func navigationRequested(for uri: Uri, in context: WindowContext) -> View? {
+        guard uri.host == self.id else { return nil }
         return ArbitaryPage()
     }
 

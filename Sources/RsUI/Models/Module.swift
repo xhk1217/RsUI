@@ -1,6 +1,6 @@
 ﻿import Foundation
+import WindowsFoundation
 import WinUI
-import WinSDK
 import RsHelper
 
 /// 模块协议，定义了模块的标准接口
@@ -12,8 +12,9 @@ public protocol Module : ExpressibleByEmptyLiteral {
 
     func registerNavigationViewItems(in context: WindowContext) -> [NavigationViewItemBase]
 
-    func makeNavigationTarget(for selectedItemTag: Any, in context: WindowContext) -> View?
     func makeSettingsCard() -> UIElement?
+
+    func navigationRequested(for uri: Uri, in context: WindowContext) -> View?
 }
 
 public extension Module {
@@ -22,10 +23,6 @@ public extension Module {
 
     func registerNavigationViewItems(in context: WindowContext) -> [NavigationViewItemBase] {
         return []
-    }
-
-    func makeNavigationTarget(for selectedItemTag: Any, in context: WindowContext) -> View? {
-        return nil
     }
 
     func makeSettingsCard() -> UIElement? {
