@@ -3,7 +3,7 @@ import WinUI
 import RsHelper
 
 open class App: SwiftApplication {
-    public static var context: AppContext!
+    public static var context = AppContext()
 
     let group: String
     let product: String
@@ -33,6 +33,7 @@ open class App: SwiftApplication {
     }
 
     override open func onShutdown(exitCode: Int32) {
-        App.context = nil
+        // Allow modules to deinit
+        App.context.modules = []
     }
 }
