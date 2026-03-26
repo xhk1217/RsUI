@@ -14,7 +14,7 @@ public protocol Module : ExpressibleByEmptyLiteral {
 
     func makeSettingsCard() -> UIElement?
 
-    func navigationRequested(for uri: Uri, in context: WindowContext) -> View?
+    func navigationRequested(for url: URL, in context: WindowContext) -> Page?
 }
 
 public extension Module {

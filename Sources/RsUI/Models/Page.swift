@@ -1,8 +1,17 @@
 import Foundation
 import Observation
+import WinUI
 
-public extension View {
-    func startObserving<Element>(_ emit: @escaping @Sendable () -> Element, onChanged: @escaping @MainActor (View, Element) -> Void) {
+public protocol Page: AnyObject {
+    var url: URL { get }
+    var header: Any? { get }
+    var content: WinUI.UIElement { get }
+}
+
+public extension Page {
+    var header: Any? { nil }
+
+    func startObserving<Element>(_ emit: @escaping @Sendable () -> Element, onChanged: @escaping @MainActor (Page, Element) -> Void) {
         let obs = Observations(emit)
 
         Task { [weak self] in

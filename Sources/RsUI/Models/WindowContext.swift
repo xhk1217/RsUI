@@ -18,7 +18,7 @@ public struct WindowContext {
         }
     }
 
-    public func navigate(to view: View) {
-        owner.navigate(to: view)
+    public func navigate(to page: Page) {
+        owner.navigate(to: page)
     }
 }
