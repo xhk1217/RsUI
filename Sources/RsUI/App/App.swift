@@ -3,7 +3,7 @@ import WinUI
 import RsHelper
 
 open class App: SwiftApplication {
-    public static var context = AppContext()
+    public static var context = AppContext.cli()
 
     let group: String
     let product: String
@@ -25,7 +25,7 @@ open class App: SwiftApplication {
     
     override open func onLaunched(_ args: WinUI.LaunchActivatedEventArgs) {
         // Need to init context after super.init() because some WinUI APIs require the application to be initialized
-        App.context = AppContext(group, product, bundle)
+        App.context = AppContext.gui(group, product, bundle)
         App.context.modules = moduleTypes.map { $0.init() }
 
         let mainWindow = MainWindow()

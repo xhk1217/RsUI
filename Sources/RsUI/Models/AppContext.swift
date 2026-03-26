@@ -25,28 +25,27 @@ public class AppContext {
     
     var modules: [any Module] = []
 
-    init(_ group: String, _ product: String, _ bundle: Bundle) {
+    private init(_ group: String, _ product: String, _ bundle: Bundle, _ loadAppearence: Bool = false) {
         productName = product
         supportDirectory = URL.applicationSupportDirectory.reachingChild(named: "\(group)/\(product)/")!       
         preferences = JsonPreferences.makeAppStandard(group: group, product: product)
-        theme = preferences.load(for: AppTheme.self)
-        language = preferences.load(for: AppLanguage.self)
+        self.theme = loadAppearence ?  preferences.load(for: AppTheme.self) : .auto 
+        self.language = loadAppearence ? preferences.load(for: AppLanguage.self) : .en_US
         self.bundle = bundle
-
-        if Application.current.requestedTheme != theme.applicationTheme {
-            Application.current.requestedTheme = theme.applicationTheme
-        }
     }
 
-    /// Default constructor for test view model without WinUI application running.
-    init() {
-        let group = "SwiftWorks"
-        productName = "RsUI"
-        supportDirectory = URL.applicationSupportDirectory.reachingChild(named: "\(group)/\(productName)/")!       
-        preferences = JsonPreferences.makeAppStandard(group: group, product: productName)
-        theme = .auto
-        language = .en_US
-        bundle = Bundle.main
+    static func gui(_ group: String, _ product: String, _ bundle: Bundle) -> AppContext {
+        let ctx = AppContext(group, product, bundle, true)
+
+        if Application.current.requestedTheme != ctx.theme.applicationTheme {
+            Application.current.requestedTheme = ctx.theme.applicationTheme
+        }
+
+        return ctx
+    }
+
+    static func cli() -> AppContext {
+        return AppContext("SwiftWorks", "RsUI", .main)
     }
 
     public func tr(_ keyAndValue: String, _ table: String? = nil) -> String {
