@@ -26,7 +26,7 @@ public extension NavigationViewItem {
         let item = NavigationViewItem()
         item.icon = icon
         item.content = label
-        item.tag = Uri(url)
+        item.tag = try? HString(url)
         return item
     }
 
@@ -79,7 +79,7 @@ public extension NavigationViewItem {
         let item = NavigationViewItem()
         item.icon = icon
         item.content = grid
-        item.tag = Uri(url)
+        item.tag = try? HString(url)
         return item
     }
 }
