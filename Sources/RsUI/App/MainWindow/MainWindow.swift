@@ -11,19 +11,7 @@ fileprivate func tr(_ keyAndValue: String) -> String {
     return App.context.tr(keyAndValue)
 }
 
-/// 主窗口界面配置，包含窗口尺寸、位置和状态
-fileprivate struct MainWindowPreferences: Preferable {
-    /// 窗口宽度
-    var windowWidth: Int = 1280
-    /// 窗口高度
-    var windowHeight: Int = 800
-    /// 窗口左上角 X 坐标
-    var windowX: Int = 100
-    /// 窗口左上角 Y 坐标
-    var windowY: Int = 100
-    /// 窗口是否最大化
-    var isMaximized: Bool = false
-
+fileprivate extension WindowPosition {
     var windowRect: RectInt32 {
         return RectInt32(
             x: Int32(windowX),
@@ -37,10 +25,9 @@ fileprivate struct MainWindowPreferences: Preferable {
 /// 主窗口类，管理整个应用的导航和 UI 布局
 class MainWindow: Window {
     // MARK: - 属性
-    private let viewModel = MainWindowViewModel()
+    private var viewModel: MainWindowViewModel! = MainWindowViewModel()
 
     /// UI 主要组件
-    private lazy var preference = App.context.preferences.load(for: MainWindowPreferences.self)
     private lazy var searchBox: AutoSuggestBox? = {
         // let box = AutoSuggestBox()
         // box.width = 360
@@ -107,11 +94,8 @@ class MainWindow: Window {
         startObserving()
     }
 
-    func navigate(to view: View) {
-        viewModel.currentView = view
-        
-        navigationView.header = view.header
-        navigationContentFrame.content = view.content
+    func navigate(to page: Page) {
+        viewModel.navigate(to: page)
     }
  
     /// 配置窗口基本属性
@@ -128,11 +112,9 @@ class MainWindow: Window {
             self?.trackWindowSize()
         }
         self.closed.addHandler { [weak self] _, _ in
-            guard let self else { return }
-            
             // TODO: appWindow.changed事件不工作，此处窗口最大化时记录有缺陷。其实也可以不保存，恢复窗口在中间即可。
-            self.trackWindowPosition()
-            App.context.preferences.save(self.preference)
+            self?.trackWindowPosition()
+            self?.viewModel = nil
         }
         restoreWindowRect()
     }
@@ -159,10 +141,14 @@ class MainWindow: Window {
 
             if args.isSettingsSelected {
                 navigate(to: SettingsView())
-            } else if let item = args.selectedItem as? NavigationViewItem, let uri = item.tag as? Uri {
+            } else if
+                let item = args.selectedItem as? NavigationViewItem,
+                let tag = item.tag,
+                let str = tag as? HString,
+                let url = URL(string: String(hString: str)) {
                 let context = WindowContext(owner: self)
                 for module in App.context.modules {
-                    if let view = module.navigationRequested(for: uri, in: context) {
+                    if let view = module.navigationRequested(for: url, in: context) {
                         navigate(to: view)
                         break
                     }
@@ -193,6 +179,19 @@ class MainWindow: Window {
                 }
             }
         }
+
+        let route = Observations {
+            self.viewModel.currentPage
+        }
+        Task { [weak self] in
+            for await page in route {
+                await MainActor.run { [weak self, weak page] in
+                    guard let self, let page else { return }
+                    self.navigationView.header = page.header
+                    self.navigationContentFrame.content = page.content
+                }
+            }
+        }
     }
 
     private func applyAppearance() {
@@ -210,7 +209,10 @@ class MainWindow: Window {
                 navigationView.menuItems.append(item)
             }
         }
-        if navigationContentFrame.content == nil && navigationView.menuItems.count > 0 {
+
+        if let page = viewModel.currentPage {
+            navigate(to: page)
+        } else { // Initializing main window
             for item in navigationView.menuItems {
                 if item is NavigationViewItem {
                     navigationView.selectedItem = item
@@ -218,32 +220,28 @@ class MainWindow: Window {
                 }
             }
         }
-        
-        self.navigationView.header = viewModel.currentView?.header
-        self.navigationContentFrame.content = viewModel.currentView?.content
     }
     
     private func restoreWindowRect() {
         guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter
         else { return }
 
-        let maximized = preference.isMaximized //moveAndResize will cause pref changed in event, so need to reserve here
-        try? hwnd.moveAndResize(preference.windowRect)
+        let maximized = viewModel.windowPosition.isMaximized //moveAndResize will cause pref changed in event, so need to reserve here
+        try? hwnd.moveAndResize(viewModel.windowPosition.windowRect)
         if maximized {
             try? presenter.maximize()
         }
     }
 
     private func trackWindowSize() {
-        guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter
-        else { return }
+        guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter else { return }
 
         if presenter.state == .restored {
-            self.preference.windowWidth = Int(hwnd.size.width)
-            self.preference.windowHeight = Int(hwnd.size.height)
-            self.preference.isMaximized = false
+            viewModel.windowPosition.windowWidth = Int(hwnd.size.width)
+            viewModel.windowPosition.windowHeight = Int(hwnd.size.height)
+            viewModel.windowPosition.isMaximized = false
         } else if presenter.state == .maximized {
-            self.preference.isMaximized = true
+            viewModel.windowPosition.isMaximized = true
         }
     }
 
@@ -252,8 +250,8 @@ class MainWindow: Window {
         else { return }
 
         if presenter.state == .restored {
-            self.preference.windowX = Int(hwnd.position.x)
-            self.preference.windowY = Int(hwnd.position.y)
+            viewModel.windowPosition.windowX = Int(hwnd.position.x)
+            viewModel.windowPosition.windowY = Int(hwnd.position.y)
         }
     }
 }

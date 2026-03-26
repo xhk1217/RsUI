@@ -4,6 +4,7 @@ import RsHelper
 
 @Observable
 class MainWindowViewModel {
+    var windowPosition: WindowPosition
     var routePreferences: RoutePreferences
 
     var backwardPages: [Page] = []
@@ -11,10 +12,12 @@ class MainWindowViewModel {
     var currentPage: Page? = nil
 
     init() {
+        windowPosition = App.context.preferences.load(for: WindowPosition.self)
         routePreferences = App.context.preferences.load(for: RoutePreferences.self)
     }
 
     deinit {
+        App.context.preferences.save(windowPosition)
         App.context.preferences.save(routePreferences)
     }
 
