@@ -1,7 +1,7 @@
 import UWP
 import WinUI
 
-public func buildSettingsCard(title: String, content: [WinUI.UIElement]) -> WinUI.StackPanel {
+func buildSettingsGroup(title: String, cards: [WinUI.UIElement]) -> WinUI.StackPanel {
     let isDark = App.context.theme.isDark
     let cardBrush = isDark
         ? WinUI.SolidColorBrush(UWP.Color(a: 255, r: 33, g: 37, b: 45))
@@ -10,16 +10,16 @@ public func buildSettingsCard(title: String, content: [WinUI.UIElement]) -> WinU
         ? UWP.Color(a: 255, r: 60, g: 63, b: 78)
         : UWP.Color(a: 255, r: 224, g: 228, b: 236))
 
-    let card = WinUI.StackPanel()
-    card.orientation = .vertical
-    card.spacing = 0
+    let group = WinUI.StackPanel()
+    group.orientation = .vertical
+    group.spacing = 0
 
     let label = WinUI.TextBlock()
     label.text = title
     label.fontSize = 20
     label.fontWeight = UWP.FontWeights.semiBold
     label.margin = WinUI.Thickness(left: 0, top: 0, right: 0, bottom: 4)
-    card.children.append(label)
+    group.children.append(label)
 
     let border = WinUI.Border()
     border.cornerRadius = WinUI.CornerRadius(topLeft: 20, topRight: 20, bottomRight: 20, bottomLeft: 20)
@@ -33,7 +33,7 @@ public func buildSettingsCard(title: String, content: [WinUI.UIElement]) -> WinU
     stack.orientation = .vertical
     stack.spacing = 0
 
-    for item in content {
+    for card in cards {
         if stack.children.count > 0 {
             let divider = WinUI.Border()
             divider.height = 1
@@ -43,10 +43,10 @@ public func buildSettingsCard(title: String, content: [WinUI.UIElement]) -> WinU
                 : UWP.Color(a: 255, r: 230, g: 232, b: 236))
             stack.children.append(divider)
         }
-        stack.children.append(item)
+        stack.children.append(card)
     }
 
     border.child = stack
-    card.children.append(border)
-    return card
+    group.children.append(border)
+    return group
 }

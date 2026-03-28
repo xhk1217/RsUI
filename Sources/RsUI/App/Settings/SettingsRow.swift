@@ -1,7 +1,7 @@
 import UWP
 import WinUI
 
-public func buildSettingsRow(iconGlyph: String, title: String, description: String, control: WinUI.UIElement?) -> WinUI.Grid {
+public func buildSettingsCard(iconGlyph: String, title: String, description: String, control: WinUI.UIElement?) -> WinUI.Grid {
     let isDark = App.context.theme.isDark
     let secondaryForeground = WinUI.SolidColorBrush(isDark
             ? UWP.Color(a: 255, r: 169, g: 173, b: 189)

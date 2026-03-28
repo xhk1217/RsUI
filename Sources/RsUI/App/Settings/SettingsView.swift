@@ -24,12 +24,12 @@ class SettingsView: Page {
         mainStackPanel.spacing = 16
         mainStackPanel.padding = WinUI.Thickness(left: 32, top: 40, right: 32, bottom: 0)
 
-        let card = buildPersonalizationCard()
-        mainStackPanel.children.append(card)
+        let group = buildPersonalizationGroup()
+        mainStackPanel.children.append(group)
         
         for module in App.context.modules {
-            if let card = module.makeSettingsCard() {
-                mainStackPanel.children.append(card)
+            if let group = module.settingsGroupRequired() {
+                mainStackPanel.children.append(buildSettingsGroup(title: group.title, cards: group.cards))
             }
         }
 
@@ -37,7 +37,7 @@ class SettingsView: Page {
         return root
     }
 
-    private func buildPersonalizationCard() -> WinUI.StackPanel {
+    private func buildPersonalizationGroup() -> WinUI.StackPanel {
         // 主题行
         let combo = WinUI.ComboBox()
         combo.minWidth = 160
@@ -54,7 +54,7 @@ class SettingsView: Page {
             }
         }
 
-        let themeRow = buildSettingsRow(
+        let themeRow = buildSettingsCard(
             iconGlyph: "\u{E790}",
             title: tr("theme"),
             description: tr("themeDescription"),
@@ -82,13 +82,13 @@ class SettingsView: Page {
             }
         }
 
-        let languageRow = buildSettingsRow(
+        let languageRow = buildSettingsCard(
             iconGlyph: "\u{E775}",
             title: tr("language"),
             description: tr("languageDescription"),
             control: languageCombo
         )
 
-        return buildSettingsCard(title: tr("personalizationSection"), content: [themeRow, languageRow])      
+        return buildSettingsGroup(title: tr("personalizationSection"), cards: [themeRow, languageRow])      
     }
 }

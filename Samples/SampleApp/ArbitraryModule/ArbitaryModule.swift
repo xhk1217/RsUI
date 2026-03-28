@@ -43,19 +43,19 @@ final class ArbitaryModule: Module {
         return ArbitaryPage()
     }
 
-    func makeSettingsCard() -> UIElement? {
+    func settingsGroupRequired() -> (title: String, cards: [UIElement])? {
         let toggle = WinUI.ToggleSwitch()
         toggle.isOn = true
         toggle.onContent = tr("toggleOn")
         toggle.offContent = tr("toggleOff")
 
-        let metadataRow = buildSettingsRow(
+        let card = buildSettingsCard(
                 iconGlyph: "\u{E70A}",
                 title: tr("metadataTitle"),
                 description: tr("metadataDescription"),
                 control: toggle
             )
 
-        return buildSettingsCard(title: "Arbitrary Settings", content: [metadataRow])
+        return (tr("Arbitrary Settings"), [card])
     }
 }
