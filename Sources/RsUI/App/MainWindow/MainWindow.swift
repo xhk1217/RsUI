@@ -89,7 +89,6 @@ class MainWindow: Window {
 
         setupWindow()
         setupContent()
-        setupModules()
 
         startObserving()
     }
@@ -140,7 +139,7 @@ class MainWindow: Window {
             guard let self, let args else { return }
 
             if args.isSettingsSelected {
-                navigate(to: SettingsView())
+                navigate(to: SettingsPage())
             } else if
                 let item = args.selectedItem as? NavigationViewItem,
                 let tag = item.tag,
@@ -159,13 +158,6 @@ class MainWindow: Window {
         try? Grid.setRow(navigationView, 1)
 
         self.content = root
-    }
-
-    private func setupModules() {
-        let context = WindowContext(owner: self)
-        for module in App.context.modules {
-            module.register(in: context)
-        }
     }
 
     private func startObserving() { 
@@ -205,8 +197,11 @@ class MainWindow: Window {
         let context = WindowContext(owner: self)
         navigationView.menuItems.clear()
         for module in App.context.modules {
-            for item in module.registerNavigationViewItems(in: context) {
+            for item in module.navigationViewMenuItemsRequired(in: context) {
                 navigationView.menuItems.append(item)
+            }
+            for item in module.navigationViewFooterMenuItemsRequired(in: context) {
+                navigationView.footerMenuItems.append(item)
             }
         }
 
@@ -216,9 +211,18 @@ class MainWindow: Window {
             for item in navigationView.menuItems {
                 if item is NavigationViewItem {
                     navigationView.selectedItem = item
-                    break
+                    return
                 }
             }
+            for item in navigationView.footerMenuItems {
+                if item is NavigationViewItem {
+                    navigationView.selectedItem = item
+                    return
+                }
+            }
+            // Manually set selected item to settings item will trigger event without isSettingsSelected = true
+            navigationView.selectedItem = navigationView.settingsItem
+            navigate(to: SettingsPage())
         }
     }
     

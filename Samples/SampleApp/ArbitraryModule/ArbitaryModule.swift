@@ -19,7 +19,7 @@ final class ArbitaryModule: Module {
         log.info("ArbitaryModule deinit")
     }
 
-    func registerNavigationViewItems(in context: WindowContext) -> [NavigationViewItemBase] {
+    func navigationViewMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase] {
         let header = NavigationViewItemHeader()
         header.content = tr("Header")
         let navigationViewItem = NavigationViewItem.build(
@@ -38,9 +38,23 @@ final class ArbitaryModule: Module {
         return [header, navigationViewItem, sep]
     }
 
-    func navigationRequested(for url: URL, in context: WindowContext) -> RsUI.Page? {
-        guard url.host == self.id else { return nil }
-        return ArbitaryPage()
+    func navigationViewFooterMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase] {
+        let header = NavigationViewItemHeader()
+        header.content = tr("Footer")
+        let navigationViewItem = NavigationViewItem.build(
+            iconGlyph: "\u{E7C3}",
+            label: tr("Arbitrary"),
+            url: "rs://\(id)",
+            actionGlyph: "\u{E8F4}",
+            actionTooltip: tr("actionTooltip"),
+            actionHandler: { _, _ in
+                context.pickFolder {
+                    print($0)
+                }
+            }
+        )
+        let sep = NavigationViewItemSeparator()
+        return [sep, header, navigationViewItem]
     }
 
     func settingsGroupRequired() -> (title: String, cards: [UIElement])? {
@@ -57,5 +71,10 @@ final class ArbitaryModule: Module {
             )
 
         return (tr("Arbitrary Settings"), [card])
+    }
+    
+    func navigationRequested(for url: URL, in context: WindowContext) -> RsUI.Page? {
+        guard url.host == self.id else { return nil }
+        return ArbitaryPage()
     }
 }
