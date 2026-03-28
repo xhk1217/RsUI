@@ -31,9 +31,6 @@ final class ArbitaryPage: RsUI.Page {
     }
 
     var content: WinUI.UIElement {
-        let root = WinUI.Grid()
-        root.padding = Thickness(left: 40, top: 0, right: 40, bottom: 32)
-        
         // 主容器
         let mainContainer = StackPanel()
         mainContainer.spacing = 24
@@ -54,7 +51,14 @@ final class ArbitaryPage: RsUI.Page {
         let statsSection = createStatsSection()
         mainContainer.children.append(statsSection)
         
-        root.children.append(mainContainer)
+        let scrollViewer = ScrollViewer()
+        scrollViewer.verticalScrollBarVisibility = .auto
+        scrollViewer.content = mainContainer
+
+        let root = WinUI.Grid()
+        root.padding = Thickness(left: 40, top: 0, right: 40, bottom: 32)
+        root.children.append(scrollViewer)
+        
         return root
     }
     

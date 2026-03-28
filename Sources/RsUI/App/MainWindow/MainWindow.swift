@@ -76,9 +76,7 @@ class MainWindow: Window {
         //nav.openPaneLength = Double(pref.sidebarWidth)
         //nav.expandedModeThresholdWidth = 800
 
-        let scrollViewer = ScrollViewer()
-        scrollViewer.content = navigationContentFrame
-        nav.content = scrollViewer
+        nav.content = navigationContentFrame
 
         return nav
     } ()

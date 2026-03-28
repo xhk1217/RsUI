@@ -17,8 +17,6 @@ class SettingsPage: Page {
     }
 
     var content: UIElement {
-        let root = WinUI.Grid()
-
         let mainStackPanel = WinUI.StackPanel()
         mainStackPanel.orientation = .vertical
         mainStackPanel.spacing = 16
@@ -33,7 +31,13 @@ class SettingsPage: Page {
             }
         }
 
-        root.children.append(mainStackPanel)
+        let scrollViewer = ScrollViewer()
+        scrollViewer.verticalScrollBarVisibility = .auto
+        scrollViewer.content = mainStackPanel
+
+        let root = WinUI.Grid()
+        root.children.append(scrollViewer)
+        
         return root
     }
 
