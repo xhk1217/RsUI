@@ -34,9 +34,13 @@ class MainWindow: Window {
         // box.height = 32
         // box.minWidth = 280
         // box.verticalAlignment = .center
-
         // return box
         return nil
+    } ()
+    private lazy var titleBarRightHeader = {
+        let panel = StackPanel()
+        panel.orientation = .horizontal
+        return panel
     } ()
     private lazy var titleBar = {
         let bar = TitleBar()
@@ -56,6 +60,8 @@ class MainWindow: Window {
         if let searchBox {
             bar.content = searchBox
         }
+
+        bar.rightHeader = titleBarRightHeader
 
         bar.paneToggleRequested.addHandler { [weak self] _, _ in
             guard let self else { return }
@@ -193,8 +199,12 @@ class MainWindow: Window {
         searchBox?.placeholderText = tr("searchControlsAndSamples")
 
         let context = WindowContext(owner: self)
+        titleBarRightHeader.children.clear()
         navigationView.menuItems.clear()
         for module in App.context.modules {
+            if let item = module.titleBarRightHeaderItemRequired(in: context) {
+                titleBarRightHeader.children.append(item)
+            }
             for item in module.navigationViewMenuItemsRequired(in: context) {
                 navigationView.menuItems.append(item)
             }

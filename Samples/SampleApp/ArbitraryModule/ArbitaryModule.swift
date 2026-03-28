@@ -11,12 +11,22 @@ func tr(_ keyAndValue: String) -> String {
 
 final class ArbitaryModule: Module {
     let id = "arbitrary"
+    let ring = ProgressRing()
     
     init() {
         log.info("ArbitaryModule init")
     }
     deinit {
         log.info("ArbitaryModule deinit")
+    }
+
+    func titleBarRightHeaderItemRequired(in context: WindowContext) -> UIElement? {
+        ring.isActive = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.ring.isActive = false
+        }
+
+        return ring
     }
 
     func navigationViewMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase] {
