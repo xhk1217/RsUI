@@ -10,7 +10,7 @@ public protocol Module : ExpressibleByEmptyLiteral {
     func titleBarRightHeaderItemRequired(in context: WindowContext) -> UIElement?
     func navigationViewMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase]
     func navigationViewFooterMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase]
-    func settingsGroupRequired() -> (label: String, cards: [UIElement])?
+    func settingsGroupRequired() -> (title: String, cards: [UIElement])?
 
     func navigationRequested(for url: URL, in context: WindowContext) -> Page?
 }
@@ -25,7 +25,7 @@ public extension Module {
     func navigationViewFooterMenuItemsRequired(in context: WindowContext) -> [NavigationViewItemBase] {
         return []
     }
-    func settingsGroupRequired() -> (label: String, cards: [UIElement])? {
+    func settingsGroupRequired() -> (title: String, cards: [UIElement])? {
         return nil
     }
 
