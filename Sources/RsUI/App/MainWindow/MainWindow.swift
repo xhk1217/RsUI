@@ -26,8 +26,51 @@ fileprivate extension WindowPosition {
 class MainWindow: Window {
     // MARK: - 属性
     private var viewModel: MainWindowViewModel! = MainWindowViewModel()
+    private var isSyncingSelection = false
 
     /// UI 主要组件
+    private lazy var backButton: Button = {
+        let icon = FontIcon()
+        icon.glyph = "\u{E72B}"
+        icon.fontSize = 12
+        let btn = Button()
+        btn.content = icon
+        btn.width = 28
+        btn.height = 28
+        btn.minWidth = 0
+        btn.minHeight = 0
+        btn.verticalAlignment = .center
+        btn.padding = Thickness(left: 0, top: 0, right: 0, bottom: 0)
+        btn.background = SolidColorBrush(Colors.transparent)
+        btn.borderThickness = Thickness(left: 0, top: 0, right: 0, bottom: 0)
+        btn.isEnabled = false
+        btn.allowFocusOnInteraction = false
+        btn.click.addHandler { [weak self] _, _ in
+            self?.viewModel.goBack()
+        }
+        return btn
+    }()
+    private lazy var forwardButton: Button = {
+        let icon = FontIcon()
+        icon.glyph = "\u{E72A}"
+        icon.fontSize = 12
+        let btn = Button()
+        btn.content = icon
+        btn.width = 28
+        btn.height = 28
+        btn.minWidth = 0
+        btn.minHeight = 0
+        btn.verticalAlignment = .center
+        btn.padding = Thickness(left: 0, top: 0, right: 0, bottom: 0)
+        btn.background = SolidColorBrush(Colors.transparent)
+        btn.borderThickness = Thickness(left: 0, top: 0, right: 0, bottom: 0)
+        btn.isEnabled = false
+        btn.allowFocusOnInteraction = false
+        btn.click.addHandler { [weak self] _, _ in
+            self?.viewModel.goForward()
+        }
+        return btn
+    }()
     private lazy var searchBox: AutoSuggestBox? = {
         // let box = AutoSuggestBox()
         // box.width = 360
@@ -57,8 +100,17 @@ class MainWindow: Window {
             bar.iconSource = iconSource
         }
 
+        let barContentStackPanel = StackPanel()
+        let navButtons = StackPanel()
+        navButtons.orientation = .horizontal
+        navButtons.spacing = 2
+        navButtons.children.append(self.backButton)
+        navButtons.children.append(self.forwardButton)
+        barContentStackPanel.children.append(navButtons)
+        bar.content = barContentStackPanel
+
         if let searchBox {
-            bar.content = searchBox
+            barContentStackPanel.children.append(searchBox)
         }
 
         bar.rightHeader = titleBarRightHeader
@@ -140,7 +192,7 @@ class MainWindow: Window {
         try? setTitleBar(titleBar)
         
         navigationView.selectionChanged.addHandler { [weak self] _, args in
-            guard let self, let args else { return }
+            guard let self, let args, !self.isSyncingSelection else { return }
 
             if args.isSettingsSelected {
                 navigate(to: SettingsPage())
@@ -185,7 +237,54 @@ class MainWindow: Window {
                     guard let self, let page else { return }
                     self.navigationView.header = page.header
                     self.navigationContentFrame.content = page.content
+                    self.syncNavigationSelection(for: page)
                 }
+            }
+        }
+
+        let navButtons = Observations {
+            (self.viewModel.backwardPages.isEmpty, self.viewModel.forwardPages.isEmpty)
+        }
+        Task { [weak self] in
+            for await (backEmpty, forwardEmpty) in navButtons {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.backButton.isEnabled = !backEmpty
+                    self.forwardButton.isEnabled = !forwardEmpty
+                }
+            }
+        }
+    }
+
+    private func syncNavigationSelection(for page: Page) {
+        isSyncingSelection = true
+        defer { isSyncingSelection = false }
+
+        let urlString = page.url.absoluteString
+
+        if urlString == "rs://ui/settings" {
+            if let settingsItem = navigationView.settingsItem as? NavigationViewItem {
+                settingsItem.isSelected = true
+            }
+            return
+        }
+
+        for item in navigationView.menuItems {
+            if let navItem = item as? NavigationViewItem,
+               let tag = navItem.tag,
+               let str = tag as? HString,
+               String(hString: str) == urlString {
+                navigationView.selectedItem = navItem
+                return
+            }
+        }
+        for item in navigationView.footerMenuItems {
+            if let navItem = item as? NavigationViewItem,
+               let tag = navItem.tag,
+               let str = tag as? HString,
+               String(hString: str) == urlString {
+                navigationView.selectedItem = navItem
+                return
             }
         }
     }
