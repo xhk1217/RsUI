@@ -26,6 +26,9 @@ public class AppContext {
         }
     }
     public var fontScale: Int = 100
+    public var iconPath: String? {
+        resourceBundle.path(forResource: productName, ofType: "ico")
+    }
     public var winAppSDKVersion: String {
         switch RuntimeInfo.version {
             case PackageVersion(major: 8000, minor: 616, build: 304, revision: 0):

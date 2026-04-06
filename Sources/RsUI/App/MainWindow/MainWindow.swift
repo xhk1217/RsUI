@@ -87,7 +87,7 @@ class MainWindow: Window {
         bar.isBackButtonVisible = false
         bar.isPaneToggleButtonVisible = true
 
-        if let iconPath = App.context.resourceBundle.path(forResource: App.context.productName, ofType: "ico") {
+        if let iconPath = App.context.iconPath {
             let bitmap = BitmapImage()
             bitmap.uriSource = Uri(iconPath)
 
