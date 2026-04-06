@@ -528,19 +528,19 @@
         }
       }
     },
-    "thankYou" : {
+    "Dependencies & references" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thank you for using Ruslan. We welcome your feedback and suggestions."
+            "value" : "Dependencies & references"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "感谢您使用 Ruslan。如有意见或建议，欢迎提交反馈。"
+            "value" : "依赖及引用"
           }
         }
       }
@@ -551,30 +551,30 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About Ruslan"
+            "value" : "About"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 Ruslan"
+            "value" : "关于"
           }
         }
       }
     },
-    "version" : {
+    "copyright" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Version 1.0.0"
+            "value" : "© %lld %@. All rights reserved."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版本 1.0.0"
+            "value" : "© %lld %@ 。保留所有权利。"
           }
         }
       }
