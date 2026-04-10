@@ -150,6 +150,10 @@ class MainWindow: Window {
     func navigate(to page: Page) {
         viewModel.navigate(to: page)
     }
+
+    func navigate(to url: URL) {
+        navigationView.selectItem(with: url)
+    }
  
     /// 配置窗口基本属性
     private func setupWindow() {
@@ -237,7 +241,7 @@ class MainWindow: Window {
                     if let page = self.viewModel.currentPage {
                         self.navigationView.header = page.header
                         self.navigationContentFrame.content = page.content
-                        self.syncNavigationSelection(for: page)
+                        self.syncNavigationSelection(for: page.url)
                     } else {
                         self.navigationView.header = nil
                         self.navigationContentFrame.content = nil
@@ -251,37 +255,11 @@ class MainWindow: Window {
         }
     }
 
-    private func syncNavigationSelection(for page: Page) {
+    private func syncNavigationSelection(for url: URL) {
         isSyncingSelection = true
         defer { isSyncingSelection = false }
 
-        let urlString = page.url.absoluteString
-
-        if urlString == "rs://ui/settings" {
-            if let settingsItem = navigationView.settingsItem as? NavigationViewItem {
-                settingsItem.isSelected = true
-            }
-            return
-        }
-
-        for item in navigationView.menuItems {
-            if let navItem = item as? NavigationViewItem,
-               let tag = navItem.tag,
-               let str = tag as? HString,
-               String(hString: str) == urlString {
-                navigationView.selectedItem = navItem
-                return
-            }
-        }
-        for item in navigationView.footerMenuItems {
-            if let navItem = item as? NavigationViewItem,
-               let tag = navItem.tag,
-               let str = tag as? HString,
-               String(hString: str) == urlString {
-                navigationView.selectedItem = navItem
-                return
-            }
-        }
+        navigationView.selectItem(with: url)
     }
 
     private func applyAppearance() {
