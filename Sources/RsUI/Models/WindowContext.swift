@@ -20,4 +20,8 @@ public struct WindowContext {
     public func navigate(to page: Page) {
         owner.navigate(to: page)
     }
+
+    public func navigate(to url: URL) {
+        owner.navigate(to: url)
+    }
 }
