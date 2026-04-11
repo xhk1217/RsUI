@@ -10,7 +10,8 @@ struct WindowPosition: Preferable {
 }
 
 struct WindowLayout: Preferable {
-    var navigationViewPaneWidth: Int = 300
+    var navigationViewPaneOpen: Bool = true
+    var navigationViewOpenPaneLength: Int = 320
 }
 
 struct RoutePreferences: Preferable {

@@ -129,9 +129,9 @@ class MainWindow: Window {
         nav.isPaneToggleButtonVisible = false
         nav.paneDisplayMode = .auto
         nav.compactModeThresholdWidth = 0
-        //nav.openPaneLength = Double(pref.sidebarWidth)
-        //nav.expandedModeThresholdWidth = 800
-
+        nav.isPaneOpen = viewModel.windowLayout.navigationViewPaneOpen
+        nav.openPaneLength = Double(viewModel.windowLayout.navigationViewOpenPaneLength)
+        nav.expandedModeThresholdWidth = nav.openPaneLength + 688 // MARK: 600 is from defaults 1008 - 320
         nav.content = navigationContentFrame
 
         return nav
@@ -181,9 +181,13 @@ class MainWindow: Window {
             self?.trackWindowSize()
         }
         self.closed.addHandler { [weak self] _, _ in
+            guard let self else { return }
+
             // TODO: appWindow.changed事件不工作，此处窗口最大化时记录有缺陷。其实也可以不保存，恢复窗口在中间即可。
-            self?.trackWindowPosition()
-            self?.viewModel = nil
+            self.trackWindowPosition()
+            self.viewModel.windowLayout.navigationViewPaneOpen = self.navigationView.isPaneOpen
+            self.viewModel.windowLayout.navigationViewOpenPaneLength = Int(self.navigationView.openPaneLength)
+            self.viewModel = nil
         }
         restoreWindowRect()
     }
