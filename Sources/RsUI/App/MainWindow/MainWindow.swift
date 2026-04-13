@@ -298,7 +298,9 @@ class MainWindow: Window {
 
         if let page = viewModel.currentPage {
             navigate(to: page)
-        } else if let lastURL = viewModel.routePreferences.lastPageURL, !navigate(to: lastURL) {
+        } else if let lastURL = viewModel.routePreferences.lastPageURL, navigate(to: lastURL) {
+            return
+        } else {
             navigationView.selectFirstItem()
         }
     }
