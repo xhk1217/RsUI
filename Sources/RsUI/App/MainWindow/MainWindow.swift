@@ -28,6 +28,15 @@ class MainWindow: Window {
     private var viewModel: MainWindowViewModel! = MainWindowViewModel()
     private var isSyncingSelection = false
 
+    // Splitter state
+    private var splitterBorder: Border!
+    private var isDraggingSplitter = false
+    private var dragStartX: Double = 0
+    private var dragStartPaneLength: Double = 0
+    private let splitterWidth: Double = 6
+    private let minPaneLength: Double = 180
+    private let maxPaneLength: Double = 600
+
     /// UI 主要组件
     private static func makeNavButton(glyph: String, action: @escaping () -> Void) -> Button {
         let icon = FontIcon()
@@ -222,8 +231,23 @@ class MainWindow: Window {
                 _ = navigate(to: url)
             }
         }
-        root.children.append(navigationView)
-        try? Grid.setRow(navigationView, 1)
+
+        navigationView.paneClosed.addHandler { [weak self] _, _ in
+            self?.splitterBorder.visibility = .collapsed
+        }
+        navigationView.paneOpened.addHandler { [weak self] _, _ in
+            self?.splitterBorder.visibility = .visible
+        }
+
+        // Wrap NavigationView with splitter overlay
+        let navWrapper = Grid()
+        navWrapper.children.append(navigationView)
+        splitterBorder = makeSplitterBorder()
+        navWrapper.children.append(splitterBorder)
+        try? Canvas.setZIndex(splitterBorder, 10)
+
+        root.children.append(navWrapper)
+        try? Grid.setRow(navWrapper, 1)
 
         self.content = root
     }
@@ -336,5 +360,67 @@ class MainWindow: Window {
             viewModel.windowPosition.windowX = Int(hwnd.position.x)
             viewModel.windowPosition.windowY = Int(hwnd.position.y)
         }
+    }
+
+    // MARK: - Splitter Methods
+
+    private func makeSplitterBorder() -> Border {
+        let b = Border()
+        b.width = splitterWidth
+        b.verticalAlignment = .stretch
+        b.horizontalAlignment = .left
+        b.background = SolidColorBrush(UWP.Color(a: 0, r: 0, g: 0, b: 0)) // transparent hit area
+        b.margin = Thickness(
+            left: navigationView.openPaneLength - splitterWidth / 2,
+            top: 0, right: 0, bottom: 0
+        )
+        b.visibility = viewModel.windowLayout.navigationViewPaneOpen ? .visible : .collapsed
+        b.protectedCursor = try? InputSystemCursor.create(.sizeWestEast)
+
+        setupSplitterPointerEvents(b)
+        return b
+    }
+
+    private func setupSplitterPointerEvents(_ splitter: Border) {
+        splitter.pointerPressed.addHandler { [weak self] _, args in
+            guard let self, let args else { return }
+            let point = try? args.getCurrentPoint(nil) // window-relative
+            self.isDraggingSplitter = true
+            self.dragStartX = Double(point?.position.x ?? 0)
+            self.dragStartPaneLength = self.navigationView.openPaneLength
+            _ = try? self.splitterBorder.capturePointer(args.pointer)
+            args.handled = true
+        }
+
+        splitter.pointerMoved.addHandler { [weak self] _, args in
+            guard let self, self.isDraggingSplitter, let args else { return }
+            let point = try? args.getCurrentPoint(nil) // window-relative
+            let currentX = Double(point?.position.x ?? 0)
+            let delta = currentX - self.dragStartX
+            let newLength = min(self.maxPaneLength, max(self.minPaneLength, self.dragStartPaneLength + delta))
+            self.applyPaneLength(newLength)
+            args.handled = true
+        }
+
+        splitter.pointerReleased.addHandler { [weak self] _, args in
+            guard let self, let args else { return }
+            self.isDraggingSplitter = false
+            try? self.splitterBorder.releasePointerCapture(args.pointer)
+            args.handled = true
+        }
+
+        splitter.pointerCaptureLost.addHandler { [weak self] _, _ in
+            guard let self else { return }
+            self.isDraggingSplitter = false
+        }
+    }
+
+    private func applyPaneLength(_ length: Double) {
+        navigationView.openPaneLength = length
+        navigationView.expandedModeThresholdWidth = length + 688
+        splitterBorder.margin = Thickness(
+            left: length - splitterWidth / 2,
+            top: 0, right: 0, bottom: 0
+        )
     }
 }
