@@ -34,7 +34,7 @@ class MainWindow: Window {
     private var dragStartX: Double = 0
     private var dragStartPaneLength: Double = 0
     private let splitterWidth: Double = 6
-    private let minPaneLength: Double = 180
+    private let minPaneLength: Double = 48
     private let maxPaneLength: Double = 600
 
     /// UI 主要组件
