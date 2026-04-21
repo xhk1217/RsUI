@@ -130,6 +130,7 @@ class MainWindow: Window {
     private lazy var navigationContentFrame = PageTransitionHost()
     private var pageViewContentBorder: Border?
     private var pageViewHeaderBorder: Border?
+    private var isFirstNavigation = true
     private lazy var navigationView = {
         let nav = NavigationView()
         nav.paneDisplayMode = .left
@@ -279,12 +280,19 @@ class MainWindow: Window {
             for await _ in route {
                 await MainActor.run { [weak self] in
                     guard let self else { return }
-                    
+
                     if let page = self.viewModel.currentPage {
                         self.navigationView.header = nil
+                        let effectiveTransitionInfo: NavigationTransitionInfo?
+                        if isFirstNavigation {
+                            effectiveTransitionInfo = SuppressNavigationTransitionInfo()
+                            isFirstNavigation = false
+                        } else {
+                            effectiveTransitionInfo = self.viewModel.navigationTransitionInfo
+                        }
                         self.navigationContentFrame.transition(
                             to: self.makePageView(page),
-                            transitionInfo: self.viewModel.navigationTransitionInfo
+                            transitionInfo: effectiveTransitionInfo
                         )
                         self.syncNavigationSelection(for: page.url)
                     } else {
