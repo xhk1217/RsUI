@@ -19,10 +19,7 @@ public extension NavigationViewItem {
         }
     }
 
-    static func build(iconGlyph: String, label: String, url: String) -> NavigationViewItem {
-        let icon = FontIcon()
-        icon.glyph = iconGlyph
-
+    static func build(icon: FontIcon, label: String, url: String) -> NavigationViewItem {
         let item = NavigationViewItem()
         item.icon = icon
         item.content = label
@@ -30,10 +27,14 @@ public extension NavigationViewItem {
         return item
     }
 
-    static func build(iconGlyph: String, label: String, url: String, actionGlyph: String, actionTooltip: String, actionHandler: @escaping ((Optional<Any>, Optional<RoutedEventArgs>) throws -> ())) -> NavigationViewItem {
+    static func build(iconGlyph: String, label: String, url: String) -> NavigationViewItem {
         let icon = FontIcon()
         icon.glyph = iconGlyph
 
+        return build(icon: icon, label: label, url: url)
+    }
+
+    static func build(icon: FontIcon, label: String, url: String, actionGlyph: String, actionTooltip: String, actionHandler: @escaping ((Optional<Any>, Optional<RoutedEventArgs>) throws -> ())) -> NavigationViewItem {
         let grid = Grid()
         grid.horizontalAlignment = .stretch
         grid.verticalAlignment = .center
@@ -82,5 +83,12 @@ public extension NavigationViewItem {
         item.content = grid
         item.tag = try? HString(url)
         return item
+    }
+
+    static func build(iconGlyph: String, label: String, url: String, actionGlyph: String, actionTooltip: String, actionHandler: @escaping ((Optional<Any>, Optional<RoutedEventArgs>) throws -> ())) -> NavigationViewItem {
+        let icon = FontIcon()
+        icon.glyph = iconGlyph
+
+        return build(icon: icon, label: label, url: url, actionGlyph: actionGlyph, actionTooltip: actionTooltip, actionHandler: actionHandler)
     }
 }
