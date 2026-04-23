@@ -1,5 +1,6 @@
 import UWP
 import WinUI
+import WindowsFoundation
 
 
 // MARK: - Brushes (internal)
@@ -33,7 +34,6 @@ private struct SettingsBrushPalette {
     let settingsCardForegroundDisabled: UWP.Color
 
     let settingsCardBorderBrush: UWP.Color
-    let settingsCardBorderBrushPointerOver: UWP.Color
     let settingsCardBorderBrushPressed: UWP.Color
     let settingsCardBorderBrushDisabled: UWP.Color
 
@@ -52,7 +52,6 @@ private struct SettingsBrushPalette {
         settingsCardForegroundDisabled: UWP.Color(a: 0x5C, r: 0x00, g: 0x00, b: 0x00),
 
         settingsCardBorderBrush: UWP.Color(a: 0x0F, r: 0x00, g: 0x00, b: 0x00),
-        settingsCardBorderBrushPointerOver: UWP.Color(a: 0xE4, r: 0x00, g: 0x00, b: 0x00),
         settingsCardBorderBrushPressed: UWP.Color(a: 0x0F, r: 0x00, g: 0x00, b: 0x00),
         settingsCardBorderBrushDisabled: UWP.Color(a: 0x0F, r: 0x00, g: 0x00, b: 0x00),
 
@@ -72,7 +71,6 @@ private struct SettingsBrushPalette {
         settingsCardForegroundDisabled: UWP.Color(a: 0x5D, r: 0xFF, g: 0xFF, b: 0xFF),
 
         settingsCardBorderBrush: UWP.Color(a: 0x19, r: 0x00, g: 0x00, b: 0x00),
-        settingsCardBorderBrushPointerOver: UWP.Color(a: 0x19, r: 0x00, g: 0x00, b: 0x00),
         settingsCardBorderBrushPressed: UWP.Color(a: 0x12, r: 0xFF, g: 0xFF, b: 0xFF),
         settingsCardBorderBrushDisabled: UWP.Color(a: 0x12, r: 0xFF, g: 0xFF, b: 0xFF),
 
@@ -114,8 +112,45 @@ func cardBorderBrush(theme: AppTheme = App.context.theme) -> WinUI.SolidColorBru
     WinUI.SolidColorBrush(settingsBrushPalette(for: theme).settingsCardBorderBrush)
 }
 
-func cardBorderBrushPointerOver(theme: AppTheme = App.context.theme) -> WinUI.SolidColorBrush {
-    WinUI.SolidColorBrush(settingsBrushPalette(for: theme).settingsCardBorderBrushPointerOver)
+func cardBorderBrushPointerOver(theme: AppTheme = App.context.theme) -> WinUI.Brush {
+    makeControlElevationBorderBrush(mode: SettingsBrushMode(theme: theme))
+}
+
+/// 此 Brush 是渐变, 比较特殊, 需要特殊处理.
+private func makeControlElevationBorderBrush(mode: SettingsBrushMode) -> WinUI.Brush {
+    let brush = WinUI.LinearGradientBrush()
+    brush.mappingMode = .absolute
+    brush.startPoint = WindowsFoundation.Point(x: 0, y: 0)
+    brush.endPoint = WindowsFoundation.Point(x: 0, y: 3)
+
+    let stops = WinUI.GradientStopCollection()
+
+    let topStop = WinUI.GradientStop()
+    topStop.offset = 0.33
+
+    let bottomStop = WinUI.GradientStop()
+    bottomStop.offset = 1.0
+
+    switch mode {
+    case .light:
+        topStop.color = UWP.Color(a: 0x29, r: 0x00, g: 0x00, b: 0x00)
+        bottomStop.color = UWP.Color(a: 0x0F, r: 0x00, g: 0x00, b: 0x00)
+
+        let transform = WinUI.CompositeTransform()
+        transform.scaleY = -1
+        transform.centerY = 0.5
+        brush.relativeTransform = transform
+
+    case .dark, .automatic:
+        topStop.color = UWP.Color(a: 0x18, r: 0xFF, g: 0xFF, b: 0xFF)
+        bottomStop.color = UWP.Color(a: 0x12, r: 0xFF, g: 0xFF, b: 0xFF)
+    }
+
+    stops.append(topStop)
+    stops.append(bottomStop)
+    brush.gradientStops = stops
+
+    return brush
 }
 
 func cardBorderBrushPressed(theme: AppTheme = App.context.theme) -> WinUI.SolidColorBrush {
