@@ -132,7 +132,7 @@ public class SettingsExpander: StackPanel {
         cardStack.children.append(expandedHost)
 
         let outerCard = WinUI.Border()
-        outerCard.cornerRadius = WinUI.CornerRadius(topLeft: 8, topRight: 8, bottomRight: 8, bottomLeft: 8)
+        outerCard.cornerRadius = WinUI.CornerRadius(topLeft: 4, topRight: 4, bottomRight: 4, bottomLeft: 4)
         outerCard.background = cardBackgroundBrush(theme: theme)
         outerCard.borderBrush = cardBorderBrush(theme: theme)
         outerCard.borderThickness = WinUI.Thickness(left: 1, top: 1, right: 1, bottom: 1)
