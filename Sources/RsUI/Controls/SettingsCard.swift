@@ -69,7 +69,7 @@ public class SettingsCard: ButtonBase {
         cardBorder.verticalAlignment = .center
         cardBorder.backgroundSizing = .innerBorderEdge
         cardBorder.borderThickness = WinUI.Thickness(left: 1, top: 1, right: 1, bottom: 1)
-        cardBorder.cornerRadius = WinUI.CornerRadius(topLeft: 4, topRight: 4, bottomRight: 8, bottomLeft: 4)
+        cardBorder.cornerRadius = WinUI.CornerRadius(topLeft: 4, topRight: 4, bottomRight: 4, bottomLeft: 4)
         cardBorder.background = cardBackgroundBrush(isDark: isDark)
         cardBorder.borderBrush = cardBorderBrush(isDark: isDark)
 
@@ -437,42 +437,40 @@ public class SettingsCard: ButtonBase {
 func cardBackgroundBrush(isDark: Bool) -> WinUI.SolidColorBrush {
     WinUI.SolidColorBrush(
         isDark
-            ? UWP.Color(a: 255, r: 32, g: 36, b: 44)
-            : UWP.Color(a: 255, r: 255, g: 255, b: 255)
+            ? UWP.Color(a: 0x0D, r: 0xFF, g: 0xFF, b: 0xFF)
+            : UWP.Color(a: 0xB3, r: 0xFF, g: 0xFF, b: 0xFF)
+    )
+}
+
+private func cardHoverBrush(isDark: Bool) -> WinUI.SolidColorBrush {
+    WinUI.SolidColorBrush(
+        isDark
+            ? UWP.Color(a: 0x15, r: 0xFF, g: 0xFF, b: 0xFF)
+            : UWP.Color(a: 0x80, r: 0xF9, g: 0xF9, b: 0xF9)
+    )
+}
+
+private func cardPressedBrush(isDark: Bool) -> WinUI.SolidColorBrush {
+    WinUI.SolidColorBrush(
+        isDark
+            ? UWP.Color(a: 0x08, r: 0xFF, g: 0xFF, b: 0xFF)
+            : UWP.Color(a: 0x4D, r: 0xF9, g: 0xF9, b: 0xF9)
     )
 }
 
 func cardBorderBrush(isDark: Bool) -> WinUI.SolidColorBrush {
     WinUI.SolidColorBrush(
         isDark
-            ? UWP.Color(a: 255, r: 49, g: 55, b: 66)
-            : UWP.Color(a: 255, r: 229, g: 231, b: 235)
-    )
-}
-
-private func cardHoverBrush(isDark: Bool) -> WinUI.SolidColorBrush {
-    // ControlFillColorSecondary
-    WinUI.SolidColorBrush(
-        isDark
-            ? UWP.Color(a: 255, r: 40, g: 44, b: 53)
-            : UWP.Color(a: 255, r: 246, g: 246, b: 248)
-    )
-}
-
-private func cardPressedBrush(isDark: Bool) -> WinUI.SolidColorBrush {
-    // ControlFillColorTertiary
-    WinUI.SolidColorBrush(
-        isDark
-            ? UWP.Color(a: 255, r: 28, g: 32, b: 40)
-            : UWP.Color(a: 255, r: 240, g: 240, b: 242)
+            ? UWP.Color(a: 25, r: 255, g: 255, b: 255)
+            : UWP.Color(a: 0x19, r: 0x00, g: 0x00, b: 0x00)
     )
 }
 
 func dividerBrush(isDark: Bool) -> WinUI.SolidColorBrush {
     WinUI.SolidColorBrush(
         isDark
-            ? UWP.Color(a: 255, r: 58, g: 63, b: 77)
-            : UWP.Color(a: 255, r: 230, g: 232, b: 236)
+            ? UWP.Color(a: 24, r: 255, g: 255, b: 255)
+            : UWP.Color(a: 15, r: 0, g: 0, b: 0)
     )
 }
 
