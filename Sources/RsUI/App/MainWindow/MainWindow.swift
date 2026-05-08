@@ -35,6 +35,8 @@ class MainWindow: Window {
     private var dragStartPaneLength: Double = 0
     private let splitterWidth: Double = 6
 
+    private var openInNewTabRequested: Bool = false
+
     /// UI 主要组件
     private static func makeNavButton(glyph: String, action: @escaping () -> Void) -> Button {
         let icon = FontIcon()
@@ -365,6 +367,24 @@ class MainWindow: Window {
         navigationView.selectItem(with: url)
     }
 
+    private func captureOpenInNewTabRequested(_ args: PointerRoutedEventArgs?) {
+        guard let args = args else { return }
+        let rawValue = Int(args.keyModifiers.rawValue)
+        openInNewTabRequested = (rawValue & 0x1) != 0
+        print("ctrl was \((openInNewTabRequested ?? false) ? "" : "not") pressed when navigationView was clicked")
+    }
+
+    private func appendNavigationItem(_ item: NavigationViewItemBase, _ isFooter: Bool) {
+        item.pointerPressed.addHandler { [weak self] _, args in
+            self?.captureOpenInNewTabRequested(args)
+        }
+        if isFooter {
+            navigationView.footerMenuItems.append(item)
+        } else {
+            navigationView.menuItems.append(item)
+        }
+    }
+
     private func applyAppearance() {
         // For min/max/close buttons. 目前不支持材质效果，但比逐个设置按钮颜色简单，并且容易由框架修正。
         self.appWindow.titleBar.preferredTheme = App.context.theme.titleBarTheme
@@ -382,10 +402,10 @@ class MainWindow: Window {
                 titleBarRightHeader.children.append(item)
             }
             for item in module.navigationViewMenuItemsRequired(in: context) {
-                navigationView.menuItems.append(item)
+                appendNavigationItem(item, false)
             }
             for item in module.navigationViewFooterMenuItemsRequired(in: context) {
-                navigationView.footerMenuItems.append(item)
+                appendNavigationItem(item, true)
             }
         }
 
