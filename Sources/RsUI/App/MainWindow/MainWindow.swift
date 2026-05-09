@@ -840,12 +840,13 @@ class MainWindow: Window {
         // Row 0: header — margin matches WinUI default NavigationViewHeaderMargin (56,44,0,0)
         let headerBorder = Border()
         headerBorder.margin = Thickness(left: 56, top: 44, right: 0, bottom: 0)
-        headerBorder.child = headerView
+        MainWindow.safelyAssignChild(headerView, toBorder: headerBorder)
         parts.headerBorder = headerBorder
 
         // Row 1: content
         let contentBorder = Border()
-        contentBorder.child = page.content
+        let pageContent = page.content
+        MainWindow.safelyAssignChild(pageContent, toBorder: contentBorder)
         parts.contentBorder = contentBorder
 
         try? Grid.setRow(headerBorder, 0)
@@ -853,6 +854,28 @@ class MainWindow: Window {
         grid.children.append(headerBorder)
         grid.children.append(contentBorder)
         return grid
+    }
+
+    /// 把 `child` 赋值给 `border.child` 之前先显式从原 parent 断开，
+    /// 防御 Page 把 UIElement 作为存储属性返回（如 Ruslan FolderView）导致的
+    /// "Element is already the child of another element" WinRT 异常 ——
+    /// 这种异常发生在 COM callback 路径里，会从 `try!` 抛出但传不到 Swift 主线程，
+    /// 进程不会真正终止，但相关 UI 操作会失败、日志会污染。
+    private static func safelyAssignChild(_ child: UIElement, toBorder border: Border) {
+        if let parent = try? VisualTreeHelper.getParent(child) {
+            if let parentBorder = parent as? Border {
+                parentBorder.child = nil
+            } else if let parentPanel = parent as? Panel {
+                var idx: UInt32 = 0
+                if parentPanel.children.indexOf(child, &idx) {
+                    parentPanel.children.removeAt(idx)
+                }
+            } else if let parentContent = parent as? ContentControl {
+                parentContent.content = nil
+            }
+            // 其他 parent 类型暂不处理；如有需要后续可扩展
+        }
+        border.child = child
     }
 
     private func syncNavigationSelection(for url: URL) {
