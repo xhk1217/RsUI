@@ -53,6 +53,11 @@ class MainWindow: Window {
     }
     private static var activeDrag: DragState? = nil
 
+    // 持有 Observation Task 句柄，窗口关闭时 cancel，避免死窗口的 task 继续访问失效的 self.appWindow / self.viewModel
+    private var envObservationTask: Task<Void, Never>?
+    private var routeObservationTask: Task<Void, Never>?
+    private var isApplyingAppearance = false
+
     /// UI 主要组件
     private static func makeNavButton(glyph: String, action: @escaping () -> Void) -> Button {
         let icon = FontIcon()
@@ -319,6 +324,12 @@ class MainWindow: Window {
         self.closed.addHandler { [weak self] _, _ in
             guard let self else { return }
 
+            // 先 cancel observation tasks，避免死窗口的 task 继续访问 self.appWindow / self.viewModel
+            self.envObservationTask?.cancel()
+            self.routeObservationTask?.cancel()
+            self.envObservationTask = nil
+            self.routeObservationTask = nil
+
             // TODO: appWindow.changed事件不工作，此处窗口最大化时记录有缺陷。其实也可以不保存，恢复窗口在中间即可。
             self.trackWindowPosition()
             self.viewModel.windowLayout.navigationViewPaneOpen = self.navigationView.isPaneOpen
@@ -450,11 +461,11 @@ class MainWindow: Window {
         self.content = root
     }
 
-    private func startObserving() { 
+    private func startObserving() {
         let env = Observations {
             (App.context.theme, App.context.language)
         }
-        Task { [weak self] in
+        envObservationTask = Task { [weak self] in
             for await _ in env {
                 await MainActor.run { [weak self] in
                     self?.applyAppearance()
@@ -462,13 +473,16 @@ class MainWindow: Window {
             }
         }
 
+        // viewModel 在 closed handler 里会被设为 nil（包括最大化最后一个 tab 的场景），
+        // 此处必须用 ?. 避免 IUO 强解包崩溃；renderSelectedTab 也会再做一次 nil 检查
         let route = Observations {
-            self.viewModel.navigationRevision
+            self.viewModel?.navigationRevision ?? 0
         }
-        Task { [weak self] in
+        routeObservationTask = Task { [weak self] in
             for await _ in route {
                 await MainActor.run { [weak self] in
-                    self?.renderSelectedTab()
+                    guard let self, self.viewModel != nil else { return }
+                    self.renderSelectedTab()
                 }
             }
         }
@@ -914,6 +928,13 @@ class MainWindow: Window {
     }
 
     private func applyAppearance() {
+        // 死窗口防御：closed handler 把 viewModel 置为 nil，此时 appWindow 也已失效（IUO → nil）
+        guard viewModel != nil, appWindow != nil else { return }
+        // 防止并发/重入（多窗口下 env Observation 接连触发可能引发 menuItems 的双 parent 错误）
+        guard !isApplyingAppearance else { return }
+        isApplyingAppearance = true
+        defer { isApplyingAppearance = false }
+
         // For min/max/close buttons. 目前不支持材质效果，但比逐个设置按钮颜色简单，并且容易由框架修正。
         self.appWindow.titleBar.preferredTheme = App.context.theme.titleBarTheme
 
