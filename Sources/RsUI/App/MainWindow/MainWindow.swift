@@ -4,61 +4,42 @@ import WindowsFoundation
 import UWP
 import WinAppSDK
 import WinUI
-import WinSDK
-import RsHelper
-
-fileprivate func tr(_ keyAndValue: String) -> String {
-    return App.context.tr(keyAndValue)
-}
-
-fileprivate extension WindowPosition {
-    var windowRect: RectInt32 {
-        return RectInt32(
-            x: Int32(windowX),
-            y: Int32(windowY),
-            width: Int32(windowWidth),
-            height: Int32(windowHeight)
-        )
-    }
-}
-
-/// 主窗口类，管理整个应用的导航和 UI 布局
-private final class PageViewParts {
-    var contentBorder: Border?
-    var headerBorder: Border?
-}
 
 class MainWindow: Window {
     // MARK: - 属性
-    private var viewModel: MainWindowViewModel! = MainWindowViewModel()
-    private var isSyncingSelection = false
-    private var isSyncingTabSelection = false
+    var viewModel: MainWindowViewModel! = MainWindowViewModel()
+    var isSyncingSelection = false
+    var isSyncingTabSelection = false
 
     // Splitter state
-    private var splitterBorder: Border!
-    private var isDraggingSplitter = false
-    private var dragStartX: Double = 0
-    private var dragStartPaneLength: Double = 0
-    private let splitterWidth: Double = 6
+    var splitterBorder: Border!
+    var isDraggingSplitter = false
+    var dragStartX: Double = 0
+    var dragStartPaneLength: Double = 0
+    let splitterWidth: Double = 6
 
-    private var openInNewTabRequested: Bool = false
-    private var initialNavigationURL: URL? = nil
-    private var tabDragHintBorder: Border? = nil
-    private var draggingTabForDrop: MainWindowTab? = nil
-    private var dragDroppedOutside = false
+    var openInNewTabRequested: Bool = false
+    var initialNavigationURL: URL? = nil
+    var tabDragHintBorder: Border? = nil
+    var draggingTabForDrop: MainWindowTab? = nil
+    var dragDroppedOutside = false
 
-    private struct DragState {
+    struct DragState {
         let sourceWindowID: ObjectIdentifier
         let tabURL: URL
     }
-    private static var activeDrag: DragState? = nil
+    static var activeDrag: DragState? = nil
 
     // 持有 Observation Task 句柄，窗口关闭时 cancel，避免死窗口的 task 继续访问失效的 self.appWindow / self.viewModel
-    private var envObservationTask: Task<Void, Never>?
-    private var routeObservationTask: Task<Void, Never>?
-    private var isApplyingAppearance = false
+    var envObservationTask: Task<Void, Never>?
+    var routeObservationTask: Task<Void, Never>?
+    var isApplyingAppearance = false
 
     /// UI 主要组件
+    static func tr(_ keyAndValue: String) -> String {
+        return App.context.tr(keyAndValue)
+    }
+
     private static func makeNavButton(glyph: String, action: @escaping () -> Void) -> Button {
         let icon = FontIcon()
         icon.glyph = glyph
@@ -91,17 +72,17 @@ class MainWindow: Window {
         return btn
     }
 
-    private lazy var backButton: Button = MainWindow.makeNavButton(glyph: "\u{E72B}") { [weak self] in
+    lazy var backButton: Button = MainWindow.makeNavButton(glyph: "\u{E72B}") { [weak self] in
         guard let self else { return }
         self.viewModel.goBack(MainWindow.makeSlideTransition(effect: .fromLeft))
         self.renderSelectedTab()
     }
-    private lazy var forwardButton: Button = MainWindow.makeNavButton(glyph: "\u{E72A}") { [weak self] in
+    lazy var forwardButton: Button = MainWindow.makeNavButton(glyph: "\u{E72A}") { [weak self] in
         guard let self else { return }
         self.viewModel.goForward(MainWindow.makeSlideTransition(effect: .fromRight))
         self.renderSelectedTab()
     }
-    private lazy var closeOtherTabsButton: Button = {
+    lazy var closeOtherTabsButton: Button = {
         let icon = FontIcon()
         icon.glyph = "\u{E8BB}"
         icon.fontSize = 12
@@ -132,11 +113,11 @@ class MainWindow: Window {
             self?.closeOtherTabs()
         }
         let toolTip = ToolTip()
-        toolTip.content = tr("关闭其他标签")
+        toolTip.content = MainWindow.tr("关闭其他标签")
         try? ToolTipService.setToolTip(btn, toolTip)
         return btn
     }()
-    private lazy var searchBox: AutoSuggestBox? = {
+    lazy var searchBox: AutoSuggestBox? = {
         // let box = AutoSuggestBox()
         // box.width = 360
         // box.height = 32
@@ -145,12 +126,12 @@ class MainWindow: Window {
         // return box
         return nil
     } ()
-    private lazy var titleBarRightHeader = {
+    lazy var titleBarRightHeader = {
         let panel = StackPanel()
         panel.orientation = .horizontal
         return panel
     } ()
-    private lazy var titleBar = {
+    lazy var titleBar = {
         let bar = TitleBar()
         bar.height = 48
         bar.isBackButtonVisible = false
@@ -189,7 +170,7 @@ class MainWindow: Window {
 
         return bar
     } ()
-    private lazy var tabView: TabView = {
+    lazy var tabView: TabView = {
         let tabs = TabView()
         tabs.isAddTabButtonVisible = true
         tabs.tabWidthMode = .equal
@@ -202,8 +183,8 @@ class MainWindow: Window {
         tabs.allowDrop = true
         return tabs
     } ()
-    private lazy var tabContentHost = Grid()
-    private lazy var navigationContentRoot: Grid = {
+    lazy var tabContentHost = Grid()
+    lazy var navigationContentRoot: Grid = {
         let grid = Grid()
 
         let tabRow = RowDefinition()
@@ -221,17 +202,17 @@ class MainWindow: Window {
 
         return grid
     } ()
-    private var tabItemsByID: [ObjectIdentifier: TabViewItem] = [:]
+    var tabItemsByID: [ObjectIdentifier: TabViewItem] = [:]
     // Stable string name keyed to tab identity — avoids WinRT projection object identity instability
-    private var tabIDByName: [String: ObjectIdentifier] = [:]
-    private var tabFramesByID: [ObjectIdentifier: PageTransitionHost] = [:]
-    private var tabPageViewPartsByID: [ObjectIdentifier: PageViewParts] = [:]
-    private var tabStripIDs: [ObjectIdentifier] = []
-    private var tabTitlesByID: [ObjectIdentifier: String] = [:]
-    private var tabClosableByID: [ObjectIdentifier: Bool] = [:]
-    private var visibleTabFrameID: ObjectIdentifier?
-    private var isFirstNavigation = true
-    private lazy var navigationView = {
+    var tabIDByName: [String: ObjectIdentifier] = [:]
+    var tabFramesByID: [ObjectIdentifier: PageTransitionHost] = [:]
+    var tabPageViewPartsByID: [ObjectIdentifier: PageViewParts] = [:]
+    var tabStripIDs: [ObjectIdentifier] = []
+    var tabTitlesByID: [ObjectIdentifier: String] = [:]
+    var tabClosableByID: [ObjectIdentifier: Bool] = [:]
+    var visibleTabFrameID: ObjectIdentifier?
+    var isFirstNavigation = true
+    lazy var navigationView = {
         let nav = NavigationView()
         nav.paneDisplayMode = .left
         nav.isSettingsVisible = true
@@ -264,906 +245,5 @@ class MainWindow: Window {
         let transition = SlideNavigationTransitionInfo()
         transition.effect = effect
         return transition
-    }
-
-    func navigate(
-        to page: Page,
-        mode: NavigationOpenMode = .inplace,
-        transitionInfoOverride: NavigationTransitionInfo? = nil
-    ) {
-        let effective = resolveOpenMode(mode)
-        performNavigate(to: page, mode: effective, transitionInfoOverride: transitionInfoOverride)
-    }
-
-    @discardableResult
-    func navigate(
-        to url: URL,
-        mode: NavigationOpenMode = .inplace,
-        transitionInfoOverride: NavigationTransitionInfo? = nil
-    ) -> Bool {
-        let effective = resolveOpenMode(mode)
-        return performNavigate(to: url, mode: effective, transitionInfoOverride: transitionInfoOverride)
-    }
-
-    /// NavigationViewItem 上 Ctrl+click 设置的 `openInNewTabRequested` 标记会把
-    /// `.inplace` 升级为 `.newTab`；调用者显式指定的非 inplace 模式不被覆盖。
-    private func resolveOpenMode(_ requested: NavigationOpenMode) -> NavigationOpenMode {
-        let flag = openInNewTabRequested
-        openInNewTabRequested = false
-        if requested == .inplace && flag {
-            return .newTab
-        }
-        return requested
-    }
-
-    private func performNavigate(
-        to page: Page,
-        mode: NavigationOpenMode,
-        transitionInfoOverride: NavigationTransitionInfo?
-    ) {
-        if mode == .newWindow {
-            MainWindow.openDetachedWindow(navigatingTo: page.url)
-            return
-        }
-        viewModel.navigate(
-            to: page,
-            transitionInfoOverride: transitionInfoOverride,
-            inNewTab: mode != .inplace,
-            switchToTab: mode != .newTabBackground
-        )
-        renderSelectedTab()
-    }
-
-    @discardableResult
-    private func performNavigate(
-        to url: URL,
-        mode: NavigationOpenMode,
-        transitionInfoOverride: NavigationTransitionInfo?
-    ) -> Bool {
-        if mode == .newWindow {
-            MainWindow.openDetachedWindow(navigatingTo: url)
-            return true
-        }
-        // 仅在 inplace 模式下短路；其他模式（newTab / newTabBackground）允许重复打开同 URL
-        if mode == .inplace, viewModel.currentPage?.url == url {
-            return true
-        }
-
-        if url == SettingsPage.url {
-            performNavigate(to: SettingsPage(), mode: mode, transitionInfoOverride: transitionInfoOverride)
-            return true
-        } else {
-            let context = WindowContext(owner: self)
-            for module in App.context.modules {
-                if let page = module.navigationRequested(for: url, in: context) {
-                    performNavigate(to: page, mode: mode, transitionInfoOverride: transitionInfoOverride)
-                    return true
-                }
-            }
-        }
-        return false
-    }
- 
-    /// 配置窗口基本属性
-    private func setupWindow() {
-        self.extendsContentIntoTitleBar = true
-        self.appWindow.titleBar.preferredHeightOption = .tall
-                
-        // 设置 Mica 背景
-        let micaBackdrop = MicaBackdrop()
-        micaBackdrop.kind = .base
-        self.systemBackdrop = micaBackdrop
-
-        self.sizeChanged.addHandler { [weak self] _, _ in
-            self?.trackWindowSize()
-        }
-        self.closed.addHandler { [weak self] _, _ in
-            guard let self else { return }
-
-            // 先 cancel observation tasks，避免死窗口的 task 继续访问 self.appWindow / self.viewModel
-            self.envObservationTask?.cancel()
-            self.routeObservationTask?.cancel()
-            self.envObservationTask = nil
-            self.routeObservationTask = nil
-
-            // TODO: appWindow.changed事件不工作，此处窗口最大化时记录有缺陷。其实也可以不保存，恢复窗口在中间即可。
-            self.trackWindowPosition()
-            self.viewModel.windowLayout.navigationViewPaneOpen = self.navigationView.isPaneOpen
-            self.viewModel.windowLayout.navigationViewOpenPaneLength = self.navigationView.openPaneLength
-            self.viewModel = nil
-        }
-        restoreWindowRect()
-    }
-
-    /// 初始化主要的 UI 布局
-    private func setupContent() {
-        let root = Grid()
-
-        // 设置行定义
-        let titleRowDef = RowDefinition()
-        titleRowDef.height = GridLength(value: 1, gridUnitType: .auto)
-        root.rowDefinitions.append(titleRowDef)
-        
-        let contentRowDef = RowDefinition()
-        contentRowDef.height = GridLength(value: 1, gridUnitType: .star)
-        root.rowDefinitions.append(contentRowDef)
-        
-        root.children.append(titleBar)
-        try? Grid.setRow(titleBar, 0)
-        try? setTitleBar(titleBar)
-        
-        navigationView.selectionChanged.addHandler { [weak self] _, args in
-            guard let self, let args, !self.isSyncingSelection else { return }
-
-            if args.isSettingsSelected {
-                navigate(to: SettingsPage(), transitionInfoOverride: SuppressNavigationTransitionInfo())
-            } else if
-                let item = args.selectedItem as? NavigationViewItem,
-                let tag = item.tag,
-                let str = tag as? HString,
-                let url = URL(string: String(hString: str)) {
-                _ = navigate(to: url, transitionInfoOverride: SuppressNavigationTransitionInfo())
-            }
-        }
-
-        tabView.selectionChanged.addHandler { [weak self] sender, args in
-            guard let self, !self.isSyncingTabSelection else { return }
-            guard let item = self.selectedTabViewItem(sender: sender, args: args) else { return }
-            guard let tab = self.tab(for: item) else { return }
-            self.switchToTab(tab)
-        }
-
-        tabView.tabCloseRequested.addHandler { [weak self] _, args in
-            guard let self, let args, let item = args.tab else { return }
-            self.closeTab(for: item)
-        }
-
-        tabView.addTabButtonClick.addHandler { [weak self] _, _ in
-            self?.openNewTabFromTabStrip()
-        }
-
-        // Source: record which tab is being dragged and expose it via static state for cross-window drop
-        tabView.tabDragStarting.addHandler { [weak self] _, args in
-            guard let self, let args, let item = args.tab else { return }
-            guard let tab = self.tab(for: item) else { return }
-            guard let url = tab.currentPage?.url else { return }
-            self.draggingTabForDrop = tab
-            MainWindow.activeDrag = DragState(sourceWindowID: ObjectIdentifier(self), tabURL: url)
-        }
-
-        // Source: flag that the tab was physically dropped outside (vs drag cancelled by Escape)
-        tabView.tabDroppedOutside.addHandler { [weak self] _, _ in
-            self?.dragDroppedOutside = true
-        }
-
-        // Source: decide outcome once drag completes
-        tabView.tabDragCompleted.addHandler { [weak self] _, args in
-            guard let self, let args else { return }
-            let wasDroppedOutside = self.dragDroppedOutside
-            defer {
-                self.dragDroppedOutside = false
-                self.draggingTabForDrop = nil
-                MainWindow.activeDrag = nil
-            }
-            guard let tab = self.draggingTabForDrop else { return }
-            guard self.viewModel.tabs.count > 1 else { return }
-            guard self.viewModel.tabs.contains(where: { $0 === tab }) else { return }
-
-            if args.dropResult == .none {
-                // No valid drop target accepted the drag; tear-off only when physically dropped (not Escape)
-                guard wasDroppedOutside else { return }
-                let url = tab.currentPage?.url
-                self.viewModel.close(tab: tab)
-                self.renderSelectedTab()
-                if let url { MainWindow.openDetachedWindow(navigatingTo: url) }
-            } else {
-                // Another window's TabView accepted the drop; close the tab from this window
-                self.viewModel.close(tab: tab)
-                self.renderSelectedTab()
-            }
-        }
-
-        // Destination: accept tab drops from other windows' TabViews
-        tabView.dragOver.addHandler { [weak self] _, args in
-            guard let self, let args else { return }
-            guard let drag = MainWindow.activeDrag, drag.sourceWindowID != ObjectIdentifier(self) else { return }
-            args.acceptedOperation = .move
-        }
-        tabView.drop.addHandler { [weak self] _, _ in
-            guard let self else { return }
-            guard let drag = MainWindow.activeDrag, drag.sourceWindowID != ObjectIdentifier(self) else { return }
-            _ = self.navigate(to: drag.tabURL, mode: .newTab, transitionInfoOverride: SuppressNavigationTransitionInfo())
-        }
-
-        setupTabDragHint()
-
-        navigationView.paneClosed.addHandler { [weak self] _, _ in
-            self?.splitterBorder.visibility = .collapsed
-        }
-        navigationView.paneOpened.addHandler { [weak self] _, _ in
-            self?.splitterBorder.visibility = .visible
-        }
-
-        // Wrap NavigationView with splitter overlay
-        let navWrapper = Grid()
-        navWrapper.children.append(navigationView)
-        splitterBorder = makeSplitterBorder()
-        navWrapper.children.append(splitterBorder)
-        try? Canvas.setZIndex(splitterBorder, 10)
-
-        root.children.append(navWrapper)
-        try? Grid.setRow(navWrapper, 1)
-
-        self.content = root
-    }
-
-    private func startObserving() {
-        let env = Observations {
-            (App.context.theme, App.context.language)
-        }
-        envObservationTask = Task { [weak self] in
-            for await _ in env {
-                await MainActor.run { [weak self] in
-                    self?.applyAppearance()
-                }
-            }
-        }
-
-        // viewModel 在 closed handler 里会被设为 nil（包括最大化最后一个 tab 的场景），
-        // 此处必须用 ?. 避免 IUO 强解包崩溃；renderSelectedTab 也会再做一次 nil 检查
-        let route = Observations {
-            self.viewModel?.navigationRevision ?? 0
-        }
-        routeObservationTask = Task { [weak self] in
-            for await _ in route {
-                await MainActor.run { [weak self] in
-                    guard let self, self.viewModel != nil else { return }
-                    self.renderSelectedTab()
-                }
-            }
-        }
-    }
-
-    private func renderSelectedTab() {
-        syncTabItems()
-        updateTabStripVisibility()
-
-        guard let tab = viewModel.selectedTab, let page = tab.currentPage else {
-            navigationView.header = nil
-            hideAllTabFrames()
-            navigationView.selectedItem = nil
-            backButton.isEnabled = false
-            forwardButton.isEnabled = false
-            return
-        }
-
-        navigationView.header = nil
-        updateTabItemState(for: tab)
-        let frame = showFrame(for: tab)
-
-        if tab.needsRender {
-            let effectiveTransitionInfo: NavigationTransitionInfo?
-            if isFirstNavigation {
-                effectiveTransitionInfo = SuppressNavigationTransitionInfo()
-                isFirstNavigation = false
-            } else {
-                effectiveTransitionInfo = tab.navigationTransitionInfo
-            }
-            frame.transition(
-                to: makePageView(page, for: tab),
-                transitionInfo: effectiveTransitionInfo
-            )
-            tab.needsRender = false
-        }
-
-        let tabItem = tabViewItem(for: tab)
-        if !tabViewItem(tabView.selectedItem as? TabViewItem, represents: ObjectIdentifier(tab)) {
-            isSyncingTabSelection = true
-            tabView.selectedItem = tabItem
-            isSyncingTabSelection = false
-        }
-
-        syncNavigationSelection(for: page.url)
-        backButton.isEnabled = !tab.backwardPages.isEmpty
-        forwardButton.isEnabled = !tab.forwardPages.isEmpty
-    }
-
-    private func syncTabItems() {
-        guard let items = tabView.tabItems else { return }
-
-        let ids = viewModel.tabs.map { ObjectIdentifier($0) }
-        let activeIDs = Set(ids)
-        tabItemsByID = tabItemsByID.filter { activeIDs.contains($0.key) }
-        tabIDByName = tabIDByName.filter { activeIDs.contains($0.value) }
-        tabTitlesByID = tabTitlesByID.filter { activeIDs.contains($0.key) }
-        tabClosableByID = tabClosableByID.filter { activeIDs.contains($0.key) }
-        tabPageViewPartsByID = tabPageViewPartsByID.filter { activeIDs.contains($0.key) }
-        removeClosedTabFrames(activeIDs: activeIDs)
-
-        guard ids != tabStripIDs else {
-            return
-        }
-
-        isSyncingTabSelection = true
-        defer { isSyncingTabSelection = false }
-
-        // Step 1: 按身份精确移除 items 中所有不再属于 viewModel.tabs 的 TabViewItem。
-        //   旧版只 `items.removeAt(items.size - 1)` 截尾，关闭非末尾 tab 时残留错位 item，
-        //   后续 insertAt 会试图把同一 UIElement 插到已存在位置 → "two parents" WinRT 异常。
-        var i: UInt32 = 0
-        while i < items.size {
-            if let item = items.getAt(i) as? TabViewItem,
-               let id = tabIDByName[item.name],
-               activeIDs.contains(id) {
-                i += 1
-            } else {
-                items.removeAt(i)
-            }
-        }
-
-        // Step 2: 重排到目标顺序。如果目标 tabItem 已在 items 中（错位），先从原位置移除再插入。
-        for (index, tab) in viewModel.tabs.enumerated() {
-            let id = ObjectIdentifier(tab)
-            let tabItem = tabViewItem(for: tab)
-            if UInt32(index) < items.size,
-               let item = items.getAt(UInt32(index)) as? TabViewItem,
-               tabViewItem(item, represents: id) {
-                continue
-            }
-
-            // 找一下 tabItem 是否已在 items 别处
-            var existingIndex: UInt32? = nil
-            var j: UInt32 = 0
-            while j < items.size {
-                if let item = items.getAt(j) as? TabViewItem,
-                   tabViewItem(item, represents: id) {
-                    existingIndex = j
-                    break
-                }
-                j += 1
-            }
-            if let existingIndex {
-                items.removeAt(existingIndex)
-            }
-            items.insertAt(UInt32(index), tabItem)
-        }
-        tabStripIDs = ids
-        updateAllTabItemCloseStates()
-    }
-
-    private func tabViewItem(_ item: TabViewItem?, represents id: ObjectIdentifier) -> Bool {
-        guard let item else { return false }
-        if tabIDByName[item.name] == id {
-            return true
-        }
-        return tabItemsByID[id] === item
-    }
-
-    private func updateTabStripVisibility() {
-        tabView.visibility = viewModel.tabs.count <= 1 ? .collapsed : .visible
-    }
-
-    private func openNewTabFromTabStrip() {
-        if let url = firstNavigationItemURL() {
-            _ = navigate(to: url, mode: .newTab, transitionInfoOverride: SuppressNavigationTransitionInfo())
-        } else {
-            navigate(to: SettingsPage(), mode: .newTab, transitionInfoOverride: SuppressNavigationTransitionInfo())
-        }
-    }
-
-    private func tabViewItem(for tab: MainWindowTab) -> TabViewItem {
-        let id = ObjectIdentifier(tab)
-        if let item = tabItemsByID[id] {
-            return item
-        }
-
-        let item = TabViewItem()
-        let name = id.debugDescription
-        item.name = name
-        tabIDByName[name] = id
-        item.tapped.addHandler { [weak self, weak item] _, _ in
-            guard let self, let item, let tab = self.tab(for: item) else { return }
-            self.switchToTab(tab)
-        }
-        item.closeRequested.addHandler { [weak self, weak item] _, _ in
-            guard let self, let item else { return }
-            self.closeTab(for: item)
-        }
-        tabItemsByID[id] = item
-        updateTabItemState(for: tab)
-        return item
-    }
-
-    private func updateTabItemState(for tab: MainWindowTab) {
-        let id = ObjectIdentifier(tab)
-        guard let item = tabItemsByID[id] else { return }
-
-        let newTitle = title(for: tab.currentPage)
-        if tabTitlesByID[id] != newTitle {
-            item.header = newTitle
-            tabTitlesByID[id] = newTitle
-        }
-
-        let canClose = viewModel.tabs.count > 1
-        if tabClosableByID[id] != canClose {
-            item.isClosable = canClose
-            tabClosableByID[id] = canClose
-        }
-    }
-
-    private func updateAllTabItemCloseStates() {
-        for tab in viewModel.tabs {
-            updateTabItemState(for: tab)
-        }
-    }
-
-    private func frame(for tab: MainWindowTab) -> PageTransitionHost {
-        let id = ObjectIdentifier(tab)
-        if let frame = tabFramesByID[id] {
-            return frame
-        }
-
-        let frame = PageTransitionHost()
-        frame.visibility = .collapsed
-        tabFramesByID[id] = frame
-        tabContentHost.children.append(frame)
-        return frame
-    }
-
-    private func showFrame(for tab: MainWindowTab) -> PageTransitionHost {
-        let id = ObjectIdentifier(tab)
-        let selectedFrame = frame(for: tab)
-        guard visibleTabFrameID != id else {
-            return selectedFrame
-        }
-
-        for (frameID, frame) in tabFramesByID {
-            frame.visibility = frameID == id ? .visible : .collapsed
-        }
-        visibleTabFrameID = id
-        return selectedFrame
-    }
-
-    private func hideAllTabFrames() {
-        for frame in tabFramesByID.values {
-            frame.visibility = .collapsed
-        }
-        visibleTabFrameID = nil
-    }
-
-    private func removeClosedTabFrames(activeIDs: Set<ObjectIdentifier>) {
-        let closedIDs = tabFramesByID.keys.filter { !activeIDs.contains($0) }
-        for id in closedIDs {
-            guard let frame = tabFramesByID.removeValue(forKey: id) else { continue }
-            removeTabFrame(frame)
-            if visibleTabFrameID == id {
-                visibleTabFrameID = nil
-            }
-        }
-    }
-
-    private func removeTabFrame(_ frame: PageTransitionHost) {
-        var idx: UInt32 = 0
-        if tabContentHost.children.indexOf(frame, &idx) {
-            tabContentHost.children.removeAt(idx)
-        }
-    }
-
-    private func tab(for item: TabViewItem) -> MainWindowTab? {
-        // Primary: stable name-based lookup (avoids WinRT projection identity instability)
-        if let id = tabIDByName[item.name], let tab = viewModel.tabs.first(where: { ObjectIdentifier($0) == id }) {
-            return tab
-        }
-        // Fallback: identity comparison
-        for tab in viewModel.tabs {
-            if tabItemsByID[ObjectIdentifier(tab)] === item {
-                return tab
-            }
-        }
-        return nil
-    }
-
-    private func selectedTabViewItem(sender: Any?, args: SelectionChangedEventArgs?) -> TabViewItem? {
-        if
-            let args,
-            let addedItems = args.addedItems,
-            addedItems.size > 0,
-            let item = addedItems.getAt(0) as? TabViewItem {
-            return item
-        }
-
-        if let tabView = sender as? TabView {
-            return tabView.selectedItem as? TabViewItem
-        }
-
-        return tabView.selectedItem as? TabViewItem
-    }
-
-    private func switchToTab(_ tab: MainWindowTab) {
-        guard viewModel.selectedTab !== tab else { return }
-        viewModel.select(tab: tab)
-        renderSelectedTab()
-    }
-
-    private func closeTab(for item: TabViewItem) {
-        guard let tab = tab(for: item) else { return }
-        viewModel.close(tab: tab)
-        renderSelectedTab()
-    }
-
-    private func closeOtherTabs() {
-        viewModel.closeOtherTabs()
-        renderSelectedTab()
-    }
-
-    private func setupTabDragHint() {
-        let hintText = TextBlock()
-        hintText.text = tr("拖到其他窗口可合并，拖到窗口外释放可分离为新窗口")
-        hintText.fontSize = 12
-        hintText.textWrapping = .wrap
-        hintText.maxWidth = 460
-        hintText.foreground = SolidColorBrush(UWP.Color(a: 255, r: 245, g: 249, b: 255))
-
-        let hintBorder = Border()
-        hintBorder.background = SolidColorBrush(UWP.Color(a: 230, r: 21, g: 94, b: 175))
-        hintBorder.borderBrush = SolidColorBrush(UWP.Color(a: 255, r: 166, g: 215, b: 255))
-        hintBorder.borderThickness = Thickness(left: 1, top: 1, right: 1, bottom: 1)
-        hintBorder.cornerRadius = CornerRadius(topLeft: 10, topRight: 10, bottomRight: 10, bottomLeft: 10)
-        hintBorder.padding = Thickness(left: 12, top: 8, right: 12, bottom: 8)
-        hintBorder.horizontalAlignment = .center
-        hintBorder.verticalAlignment = .top
-        hintBorder.margin = Thickness(left: 0, top: 12, right: 0, bottom: 0)
-        hintBorder.opacity = 0
-        hintBorder.visibility = .collapsed
-        hintBorder.isHitTestVisible = false
-        hintBorder.child = hintText
-        try? Canvas.setZIndex(hintBorder, 99)
-        tabContentHost.children.append(hintBorder)
-        tabDragHintBorder = hintBorder
-
-        tabView.tabDragStarting.addHandler { [weak hintBorder] _, _ in
-            hintBorder?.visibility = .visible
-            hintBorder?.opacity = 1
-        }
-        tabView.tabDragCompleted.addHandler { [weak hintBorder] _, _ in
-            hintBorder?.opacity = 0
-            hintBorder?.visibility = .collapsed
-        }
-    }
-
-    static func openDetachedWindow(navigatingTo url: URL) {
-        let window = MainWindow()
-        window.initialNavigationURL = url
-        try? window.activate()
-    }
-
-    private func firstNavigationItemURL() -> URL? {
-        return firstNavigationItemURL(in: navigationView.menuItems)
-            ?? firstNavigationItemURL(in: navigationView.footerMenuItems)
-    }
-
-    private func firstNavigationItemURL(in items: AnyIVector<Any?>?) -> URL? {
-        guard let items else { return nil }
-
-        for item in items {
-            guard let navItem = item as? NavigationViewItem else { continue }
-            if
-                let tag = navItem.tag,
-                let str = tag as? HString,
-                let url = URL(string: String(hString: str)) {
-                return url
-            }
-            if let url = firstNavigationItemURL(in: navItem.menuItems) {
-                return url
-            }
-        }
-
-        return nil
-    }
-
-    private func title(for page: Page?) -> String {
-        guard let page else { return tr("New Tab") }
-        if let text = page.header as? String, !text.isEmpty {
-            return text
-        }
-
-        let host = page.url.host ?? page.url.absoluteString
-        return host.isEmpty ? page.url.absoluteString : host
-    }
-
-    private func makePageView(_ page: Page, for tab: MainWindowTab) -> UIElement {
-        let tabID = ObjectIdentifier(tab)
-        let parts = tabPageViewPartsByID[tabID] ?? PageViewParts()
-        parts.contentBorder?.child = nil
-        parts.headerBorder?.child = nil
-        parts.contentBorder = nil
-        parts.headerBorder = nil
-        tabPageViewPartsByID[tabID] = parts
-
-        // String header → 同时渲染为页面顶部 28pt 大标题 + 通过 title(for:) 用作 Tab 标签
-        // UIElement header → 直接渲染到页面顶部
-        let headerView: UIElement
-        if let text = page.header as? String {
-            let tb = TextBlock()
-            tb.text = text
-            tb.fontSize = 28
-            tb.fontWeight = FontWeights.semiBold
-            tb.textWrapping = .wrap
-            headerView = tb
-        } else if let view = page.header as? UIElement {
-            headerView = view
-        } else {
-            return page.content
-        }
-
-        let grid = Grid()
-        let autoRow = RowDefinition()
-        autoRow.height = GridLength(value: 0, gridUnitType: .auto)
-        let starRow = RowDefinition()
-        starRow.height = GridLength(value: 1, gridUnitType: .star)
-        grid.rowDefinitions.append(autoRow)
-        grid.rowDefinitions.append(starRow)
-
-        // Row 0: header — margin matches WinUI default NavigationViewHeaderMargin (56,44,0,0)
-        let headerBorder = Border()
-        headerBorder.margin = Thickness(left: 56, top: 44, right: 0, bottom: 0)
-        MainWindow.safelyAssignChild(headerView, toBorder: headerBorder)
-        parts.headerBorder = headerBorder
-
-        // Row 1: content
-        let contentBorder = Border()
-        let pageContent = page.content
-        MainWindow.safelyAssignChild(pageContent, toBorder: contentBorder)
-        parts.contentBorder = contentBorder
-
-        try? Grid.setRow(headerBorder, 0)
-        try? Grid.setRow(contentBorder, 1)
-        grid.children.append(headerBorder)
-        grid.children.append(contentBorder)
-        return grid
-    }
-
-    /// 把 `child` 赋值给 `border.child` 之前先显式从原 parent 断开，
-    /// 防御 Page 把 UIElement 作为存储属性返回导致的 
-    /// "Element is already the child of another element" WinRT 异常 ——
-    /// 这种异常发生在 COM callback 路径里，会从 `try!` 抛出但传不到 Swift 主线程，
-    /// 进程不会真正终止，但相关 UI 操作会失败、日志会污染。
-    private static func safelyAssignChild(_ child: UIElement, toBorder border: Border) {
-        detachFromVisualParent(child)
-        border.child = child
-    }
-
-    /// 把 element 从其当前 visual parent 上断开。覆盖 Border / Panel / ContentControl /
-    /// ContentPresenter 这几种最常见的 parent 类型。其他类型（如 ItemsControl 直接挂载
-    /// arbitrary UIElement，理论上不应该出现）打日志方便排查。
-    private static func detachFromVisualParent(_ element: UIElement) {
-        guard let parent = try? VisualTreeHelper.getParent(element) else { return }
-        if let parentBorder = parent as? Border {
-            parentBorder.child = nil
-        } else if let parentPanel = parent as? Panel {
-            var idx: UInt32 = 0
-            if parentPanel.children.indexOf(element, &idx) {
-                parentPanel.children.removeAt(idx)
-            }
-        } else if let parentContent = parent as? ContentControl {
-            parentContent.content = nil
-        } else if let parentPresenter = parent as? ContentPresenter {
-            parentPresenter.content = nil
-        } else {
-            print("[RsUI] detachFromVisualParent: unsupported parent type \(type(of: parent)) for child \(type(of: element)) — 'Element is already the child of another element' may follow")
-        }
-    }
-
-    private func syncNavigationSelection(for url: URL) {
-        isSyncingSelection = true
-        defer { isSyncingSelection = false }
-        
-        navigationView.selectItem(with: url)
-    }
-
-    private func captureOpenInNewTabRequested(_ args: PointerRoutedEventArgs?) {
-        guard let args = args else { return }
-        let rawValue = Int(args.keyModifiers.rawValue)
-        openInNewTabRequested = (rawValue & 0x1) != 0
-        print("ctrl was \(openInNewTabRequested ? "" : "not") pressed when navigationView was clicked")
-    }
-
-    private func appendNavigationItem(_ item: NavigationViewItemBase, _ isFooter: Bool) {
-        item.pointerPressed.addHandler { [weak self, weak item] _, args in
-            guard let self else { return }
-            self.captureOpenInNewTabRequested(args)
-            guard self.openInNewTabRequested, let item else { return }
-            self.openSelectedNavigationItemInNewTabIfNeeded(item, args)
-        }
-        if isFooter {
-            navigationView.footerMenuItems.append(item)
-        } else {
-            navigationView.menuItems.append(item)
-        }
-    }
-
-    private func openSelectedNavigationItemInNewTabIfNeeded(_ item: NavigationViewItemBase, _ args: PointerRoutedEventArgs?) {
-        guard isNavigationItemSelected(item), let url = url(for: item) else { return }
-
-        args?.handled = true
-        openInNewTabRequested = false
-
-        let queued = (try? dispatcherQueue?.tryEnqueue { [weak self] in
-            guard let self else { return }
-            _ = self.navigate(
-                to: url,
-                mode: .newTab,
-                transitionInfoOverride: SuppressNavigationTransitionInfo()
-            )
-        }) ?? false
-
-        if !queued {
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                _ = self.navigate(
-                    to: url,
-                    mode: .newTab,
-                    transitionInfoOverride: SuppressNavigationTransitionInfo()
-                )
-            }
-        }
-    }
-
-    private func isNavigationItemSelected(_ item: NavigationViewItemBase) -> Bool {
-        guard let selectedItem = navigationView.selectedItem as? NavigationViewItemBase else { return false }
-        return selectedItem === item
-    }
-
-    private func url(for item: NavigationViewItemBase) -> URL? {
-        guard
-            let navItem = item as? NavigationViewItem,
-            let tag = navItem.tag,
-            let str = tag as? HString
-        else {
-            return nil
-        }
-
-        return URL(string: String(hString: str))
-    }
-
-    private func applyAppearance() {
-        // 死窗口防御：closed handler 把 viewModel 置为 nil，此时 appWindow 也已失效（IUO → nil）
-        guard viewModel != nil, appWindow != nil else { return }
-        // 防止并发/重入（多窗口下 env Observation 接连触发可能引发 menuItems 的双 parent 错误）
-        guard !isApplyingAppearance else { return }
-        isApplyingAppearance = true
-        defer { isApplyingAppearance = false }
-
-        // For min/max/close buttons. 目前不支持材质效果，但比逐个设置按钮颜色简单，并且容易由框架修正。
-        self.appWindow.titleBar.preferredTheme = App.context.theme.titleBarTheme
-
-        self.title = tr(App.context.productName)
-        titleBar.title = self.title
-        searchBox?.placeholderText = tr("searchControlsAndSamples")
-
-        let context = WindowContext(owner: self)
-        titleBarRightHeader.children.clear()
-        navigationView.menuItems.clear()
-        navigationView.footerMenuItems.clear()
-        for module in App.context.modules {
-            if let item = module.titleBarRightHeaderItemRequired(in: context) {
-                titleBarRightHeader.children.append(item)
-            }
-            for item in module.navigationViewMenuItemsRequired(in: context) {
-                appendNavigationItem(item, false)
-            }
-            for item in module.navigationViewFooterMenuItemsRequired(in: context) {
-                appendNavigationItem(item, true)
-            }
-        }
-
-        if let url = initialNavigationURL {
-            initialNavigationURL = nil
-            _ = navigate(to: url, transitionInfoOverride: SuppressNavigationTransitionInfo())
-            return
-        }
-
-        if let page = viewModel.currentPage {
-            navigate(to: page)
-        } else if let lastURL = viewModel.routePreferences.lastPageURL, navigate(to: lastURL) {
-            return
-        } else {
-            navigationView.selectFirstItem()
-        }
-    }
-    
-    private func restoreWindowRect() {
-        guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter
-        else { return }
-
-        let maximized = viewModel.windowPosition.isMaximized //moveAndResize will cause pref changed in event, so need to reserve here
-        try? hwnd.moveAndResize(viewModel.windowPosition.windowRect)
-        if maximized {
-            try? presenter.maximize()
-        }
-    }
-
-    private func trackWindowSize() {
-        guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter else { return }
-
-        if presenter.state == .restored {
-            viewModel.windowPosition.windowWidth = Int(hwnd.size.width)
-            viewModel.windowPosition.windowHeight = Int(hwnd.size.height)
-            viewModel.windowPosition.isMaximized = false
-        } else if presenter.state == .maximized {
-            viewModel.windowPosition.isMaximized = true
-        }
-    }
-
-    private func trackWindowPosition() {
-        guard let hwnd = self.appWindow, let presenter = hwnd.presenter as? OverlappedPresenter
-        else { return }
-
-        if presenter.state == .restored {
-            viewModel.windowPosition.windowX = Int(hwnd.position.x)
-            viewModel.windowPosition.windowY = Int(hwnd.position.y)
-        }
-    }
-
-    // MARK: - Splitter Methods
-
-    private func makeSplitterBorder() -> Border {
-        let b = Border()
-        b.width = splitterWidth
-        b.verticalAlignment = .stretch
-        b.horizontalAlignment = .left
-        b.background = SolidColorBrush(UWP.Color(a: 0, r: 0, g: 0, b: 0)) // transparent hit area
-        b.margin = Thickness(
-            left: navigationView.openPaneLength - splitterWidth / 2,
-            top: 0, right: 0, bottom: 0
-        )
-        b.visibility = viewModel.windowLayout.navigationViewPaneOpen ? .visible : .collapsed
-        b.protectedCursor = try? InputSystemCursor.create(.sizeWestEast)
-
-        setupSplitterPointerEvents(b)
-        return b
-    }
-
-    private func setupSplitterPointerEvents(_ splitter: Border) {
-        splitter.pointerPressed.addHandler { [weak self] _, args in
-            guard let self, let args else { return }
-            let point = try? args.getCurrentPoint(nil) // window-relative
-            self.isDraggingSplitter = true
-            self.dragStartX = Double(point?.position.x ?? 0)
-            self.dragStartPaneLength = self.navigationView.openPaneLength
-            _ = try? self.splitterBorder.capturePointer(args.pointer)
-            args.handled = true
-        }
-
-        splitter.pointerMoved.addHandler { [weak self] _, args in
-            guard let self, self.isDraggingSplitter, let args else { return }
-            let point = try? args.getCurrentPoint(nil) // window-relative
-            let currentX = Double(point?.position.x ?? 0)
-            let delta = currentX - self.dragStartX
-            let newLength = min(self.viewModel.windowLayout.navigationViewMaxPaneLength, max(self.viewModel.windowLayout.navigationViewMinPaneLength, self.dragStartPaneLength + delta))
-            self.applyPaneLength(newLength)
-            args.handled = true
-        }
-
-        splitter.pointerReleased.addHandler { [weak self] _, args in
-            guard let self, let args else { return }
-            self.isDraggingSplitter = false
-            try? self.splitterBorder.releasePointerCapture(args.pointer)
-            args.handled = true
-        }
-
-        splitter.pointerCaptureLost.addHandler { [weak self] _, _ in
-            guard let self else { return }
-            self.isDraggingSplitter = false
-        }
-    }
-
-    private func applyPaneLength(_ length: Double) {
-        navigationView.openPaneLength = length
-        navigationView.expandedModeThresholdWidth = length + viewModel.windowLayout.navigationViewExpandedModeThresholdContentWidth
-        splitterBorder.margin = Thickness(
-            left: length - splitterWidth / 2,
-            top: 0, right: 0, bottom: 0
-        )
     }
 }
