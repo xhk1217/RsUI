@@ -113,7 +113,7 @@ class MainWindow: Window {
             self?.closeOtherTabs()
         }
         let toolTip = ToolTip()
-        toolTip.content = MainWindow.tr("关闭其他标签")
+        toolTip.content = MainWindow.tr("CloseOthers")
         try? ToolTipService.setToolTip(btn, toolTip)
         return btn
     }()

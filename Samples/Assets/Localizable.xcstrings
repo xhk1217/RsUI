@@ -373,19 +373,19 @@
         }
       }
     },
-    "sliceLibrary" : {
+    "CloseOthers" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Slice Library"
+            "value" : "Close Others"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切片库"
+            "value" : "关闭其它标签页"
           }
         }
       }
